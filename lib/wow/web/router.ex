@@ -8,4 +8,10 @@ defmodule Wow.Web.Router do
   scope "/api", Wow.Web do
     pipe_through :api
   end
+
+  forward "/graph", Absinthe.Plug,
+    schema: Wow.Schema
+
+  forward "/graphiql", Absinthe.Plug.GraphiQL,
+    schema: Wow.Schema
 end
