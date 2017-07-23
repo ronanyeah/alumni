@@ -8,12 +8,12 @@ Repo.delete_all Student
 Repo.delete_all Cohort
 Repo.delete_all Campus
 
-for _ <- 1..10 do
+for _ <- 1..3 do
   %Campus{ id: campus_id } = Repo.insert!(%Campus{
     name: Faker.Address.city
   })
 
-  for _ <- 1..10 do
+  for _ <- 1..3 do
     start_date = Faker.Date.backward(1000)
 
     end_date =
