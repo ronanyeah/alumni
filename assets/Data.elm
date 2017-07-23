@@ -1,4 +1,4 @@
-module Data exposing (campuses, all)
+module Data exposing (all)
 
 import Http exposing (get)
 import Json.Decode as Decode
@@ -10,38 +10,21 @@ import Types exposing (Cohort, Campus, Student)
 -- DATA
 
 
-campuses : Http.Request (List Campus)
-campuses =
-    graph
-        (Query
-            [ f "campuses"
-                [ f "id" []
-                , f "name" []
-                ]
-            ]
-        )
-        (Decode.at [ "data", "campuses" ] <|
-            Decode.list campusDecoder
-        )
-
-
 all : Http.Request (List Campus)
 all =
     graph
-        (Query
-            [ f "campuses"
-                [ f "id" []
-                , f "name" []
-                , f "cohorts"
-                    [ f "id" []
-                    , f "startDate" []
-                    , f "endDate" []
-                    , f "students"
-                        [ f "id" []
-                        , f "firstName" []
-                        , f "lastName" []
-                        , f "github" []
-                        ]
+        (Field "campuses"
+            [ Field "id" []
+            , Field "name" []
+            , Field "cohorts"
+                [ Field "id" []
+                , Field "startDate" []
+                , Field "endDate" []
+                , Field "students"
+                    [ Field "id" []
+                    , Field "firstName" []
+                    , Field "lastName" []
+                    , Field "github" []
                     ]
                 ]
             ]
@@ -56,45 +39,41 @@ all =
 
 
 type Field
-    = Field String Query
-
-
-type Query
-    = Query (List Field)
-
-
-f : String -> List Field -> Field
-f name fields =
-    Field name (Query fields)
-
-
-queryToString : Query -> String
-queryToString (Query query) =
-    if List.isEmpty query then
-        ""
-    else
-        query
-            |> List.map fieldToString
-            |> List.foldr (++) ""
-            |> (++) "{"
-            |> flip (++) "}"
+    = Field String (List Field)
 
 
 fieldToString : Field -> String
-fieldToString (Field name query) =
-    name ++ " " ++ queryToString query
+fieldToString (Field name fields) =
+    let
+        append =
+            if List.isEmpty fields then
+                " "
+            else
+                fields
+                    |> List.map fieldToString
+                    |> List.foldr (++) ""
+                    |> wrapWithBraces
+    in
+        name ++ append
 
 
-graph : Query -> Decode.Decoder a -> Http.Request a
+graph : Field -> Decode.Decoder a -> Http.Request a
 graph query decoder =
     let
         url =
             query
-                |> queryToString
+                |> fieldToString
+                |> wrapWithBraces
                 |> Http.encodeUri
                 |> (++) "/graph?query="
     in
         get url decoder
+
+
+wrapWithBraces : String -> String
+wrapWithBraces =
+    (++) "{"
+        >> flip (++) "}"
 
 
 
