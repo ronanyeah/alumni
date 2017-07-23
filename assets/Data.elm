@@ -29,8 +29,9 @@ all =
                 ]
             ]
         )
-        (Decode.at [ "data", "campuses" ]
-            (Decode.list campusDecoder)
+        (Decode.at [ "data", "campuses" ] <|
+            Decode.list <|
+                campusDecoder
         )
 
 
