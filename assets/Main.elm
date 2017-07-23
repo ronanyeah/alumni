@@ -19,16 +19,12 @@ main =
 
 
 type alias Model =
-    { campuses : List Campus
-    }
+    { campuses : List Campus }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { campuses = []
-      }
-    , Http.send Cb <| Data.all
-    )
+    { campuses = [] } ! [ Http.send Cb Data.all ]
 
 
 
@@ -36,8 +32,8 @@ init =
 
 
 view : Model -> Html Msg
-view { campuses } =
-    campusesView campuses
+view =
+    .campuses >> campusesView
 
 
 campusesView : List Campus -> Html Msg
