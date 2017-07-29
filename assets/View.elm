@@ -138,12 +138,24 @@ view { campuses, cohorts, students, selectedCampus, selectedCohort, cohortForm, 
                                 (div
                                     []
                                     (text "Please select cohort: "
-                                        :: (cohorts
+                                        :: (campuses
                                                 |> Dict.values
-                                                |> List.indexedMap
-                                                    (\i cohort ->
-                                                        button [ onClick <| StudentFormSetCohort cohort.id ]
-                                                            [ text <| toString i ]
+                                                |> List.map
+                                                    (\{ name, id } ->
+                                                        div []
+                                                            (p []
+                                                                [ text <| "Campus: " ++ name
+                                                                ]
+                                                                :: (cohorts
+                                                                        |> Dict.values
+                                                                        |> List.filter (.campusId >> (==) id)
+                                                                        |> List.indexedMap
+                                                                            (\i cohort ->
+                                                                                button [ onClick <| StudentFormSetCohort cohort.id ]
+                                                                                    [ text <| toString <| i + 1 ]
+                                                                            )
+                                                                   )
+                                                            )
                                                     )
                                            )
                                     )

@@ -20,6 +20,8 @@ type Msg
     | CohortFormSetEndDate String
     | CohortFormSetStartDate String
     | CohortFormSubmit
+    | SelectCampus String
+    | SelectCohort String
     | StudentFormCancel
     | StudentFormEnable
     | StudentFormSetCohort String
@@ -27,8 +29,6 @@ type Msg
     | StudentFormSetLastName String
     | StudentFormSetGithub String
     | StudentFormSubmit
-    | SelectCampus String
-    | SelectCohort String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -42,6 +42,43 @@ update msg model =
                 Cmd.none
     in
         case msg of
+            CbAllData res ->
+                case res of
+                    Ok { campuses, cohorts, students } ->
+                        { model
+                            | campuses = dictById campuses
+                            , cohorts = dictById cohorts
+                            , students = dictById students
+                        }
+                            ! []
+
+                    Err err ->
+                        model ! [ log "err" err ]
+
+            CbCreateCohort res ->
+                case res of
+                    Ok data ->
+                        { model
+                            | cohortForm = Nothing
+                            , cohorts = Dict.insert data.id data model.cohorts
+                        }
+                            ! [ log "Res" data ]
+
+                    Err err ->
+                        { model | cohortForm = Nothing } ! [ log "Err" err ]
+
+            CbCreateStudent res ->
+                case res of
+                    Ok data ->
+                        { model
+                            | studentForm = Nothing
+                            , students = Dict.insert data.id data model.students
+                        }
+                            ! [ log "Res" data ]
+
+                    Err err ->
+                        { model | cohortForm = Nothing } ! [ log "Err" err ]
+
             CohortFormCancel ->
                 { model | cohortForm = Nothing } ! []
 
@@ -97,6 +134,26 @@ update msg model =
                                 )
                 in
                     model ! [ cmd ]
+
+            SelectCampus campusId ->
+                let
+                    selectedCampus =
+                        if campusId == model.selectedCampus then
+                            ""
+                        else
+                            campusId
+                in
+                    { model | selectedCampus = selectedCampus } ! []
+
+            SelectCohort id ->
+                let
+                    selectedCohort =
+                        if id == model.selectedCohort then
+                            ""
+                        else
+                            id
+                in
+                    { model | selectedCohort = selectedCohort } ! []
 
             StudentFormCancel ->
                 { model | studentForm = Nothing } ! []
@@ -177,63 +234,6 @@ update msg model =
                                 )
                 in
                     model ! [ cmd ]
-
-            CbAllData res ->
-                case res of
-                    Ok { campuses, cohorts, students } ->
-                        { model
-                            | campuses = dictById campuses
-                            , cohorts = dictById cohorts
-                            , students = dictById students
-                        }
-                            ! []
-
-                    Err err ->
-                        model ! [ log "err" err ]
-
-            CbCreateCohort res ->
-                case res of
-                    Ok data ->
-                        { model
-                            | cohortForm = Nothing
-                            , cohorts = Dict.insert data.id data model.cohorts
-                        }
-                            ! [ log "Res" data ]
-
-                    Err err ->
-                        { model | cohortForm = Nothing } ! [ log "Err" err ]
-
-            CbCreateStudent res ->
-                case res of
-                    Ok data ->
-                        { model
-                            | studentForm = Nothing
-                            , students = Dict.insert data.id data model.students
-                        }
-                            ! [ log "Res" data ]
-
-                    Err err ->
-                        { model | cohortForm = Nothing } ! [ log "Err" err ]
-
-            SelectCampus campusId ->
-                let
-                    selectedCampus =
-                        if campusId == model.selectedCampus then
-                            ""
-                        else
-                            campusId
-                in
-                    { model | selectedCampus = selectedCampus } ! []
-
-            SelectCohort id ->
-                let
-                    selectedCohort =
-                        if id == model.selectedCohort then
-                            ""
-                        else
-                            id
-                in
-                    { model | selectedCohort = selectedCohort } ! []
 
 
 

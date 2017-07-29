@@ -28,6 +28,15 @@ defmodule Wow.Schema do
 
         resolve &Wow.CohortResolver.create/2
       end
+
+      field :student, type: :student do
+        arg :cohort_id, non_null(:string)
+        arg :first_name, non_null(:string)
+        arg :last_name, non_null(:string)
+        arg :github, non_null(:string)
+
+        resolve &Wow.StudentResolver.create/2
+      end
     end
   end
 end
