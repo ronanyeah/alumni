@@ -1,61 +1,84 @@
-module Data exposing (campusQuery, campusRequest, createCohort)
+module Data exposing (queryAllData, mutationNewCohort)
 
 import Date
-import Http exposing (post, emptyBody)
-import Json.Decode as Decode
-import Types exposing (Cohort, Campus, Student)
+import Types exposing (Cohort, Campus, Student, AllData)
 import GraphQL.Request.Builder as G
+import GraphQL.Request.Builder.Arg as Arg
+import GraphQL.Request.Builder.Variable as Var
 
 
-campusQuery : G.Document G.Query (List Campus) vars
-campusQuery =
+queryAllData : G.Request G.Query AllData
+queryAllData =
     let
-        campus =
-            G.object Campus
-                |> G.with (G.field "id" [] G.string)
-                |> G.with (G.field "name" [] G.string)
-                |> G.with (G.field "cohorts" [] (G.list cohort))
-
-        dateParse : String -> Date.Date
-        dateParse =
-            Date.fromString
-                >> Result.withDefault (Date.fromTime 0)
-
-        cohort =
-            G.object Cohort
-                |> G.with (G.field "id" [] G.string)
-                |> G.with (G.field "startDate" [] (G.map dateParse G.string))
-                |> G.with (G.field "endDate" [] (G.map dateParse G.string))
-                |> G.with (G.field "students" [] (G.list student))
-
-        student =
-            G.object Student
-                |> G.with (G.field "id" [] G.string)
-                |> G.with (G.field "firstName" [] G.string)
-                |> G.with (G.field "lastName" [] G.string)
-                |> G.with (G.field "github" [] G.string)
-    in
-        G.queryDocument <|
-            G.extract <|
-                G.field "campuses"
-                    []
-                    (G.list campus)
-
-
-campusRequest : G.Request G.Query (List Campus)
-campusRequest =
-    G.request () campusQuery
-
-
-createCohort : String -> String -> String -> Http.Request Decode.Value
-createCohort startDate endDate campus =
-    let
+        query : G.Document G.Query AllData vars
         query =
-            "mutation{ cohort(campus_id: \"" ++ campus ++ "\" startDate: \"" ++ startDate ++ "\" endDate: \"" ++ endDate ++ "\") { id } }"
-
-        url =
-            query
-                |> Http.encodeUri
-                |> (++) "/graph?query="
+            G.queryDocument <|
+                (G.object AllData
+                    |> G.with (G.field "campuses" [] (G.list campus))
+                    |> G.with (G.field "cohorts" [] (G.list cohort))
+                    |> G.with (G.field "students" [] (G.list student))
+                )
     in
-        post url emptyBody Decode.value
+        G.request () query
+
+
+mutationNewCohort : String -> String -> String -> G.Request G.Mutation Cohort
+mutationNewCohort startDate endDate campusId =
+    let
+        mutation : G.Document G.Mutation Cohort { a | campusId : String, endDate : String, startDate : String }
+        mutation =
+            G.mutationDocument <|
+                G.extract <|
+                    G.field "cohort"
+                        [ ( "startDate", Arg.variable (Var.required "startDate" .startDate Var.string) )
+                        , ( "endDate", Arg.variable (Var.required "endDate" .endDate Var.string) )
+                        , ( "campusId", Arg.variable (Var.required "campusId" .campusId Var.string) )
+                        ]
+                        cohort
+    in
+        G.request
+            { startDate = startDate
+            , endDate = endDate
+            , campusId = campusId
+            }
+            mutation
+
+
+
+-- GRAPHQL TYPES
+
+
+campus : G.ValueSpec G.NonNull G.ObjectType Campus vars
+campus =
+    G.object Campus
+        |> G.with (G.field "id" [] G.string)
+        |> G.with (G.field "name" [] G.string)
+
+
+cohort : G.ValueSpec G.NonNull G.ObjectType Cohort vars
+cohort =
+    G.object Cohort
+        |> G.with (G.field "id" [] G.string)
+        |> G.with (G.field "campusId" [] G.string)
+        |> G.with (G.field "startDate" [] (G.map dateParse G.string))
+        |> G.with (G.field "endDate" [] (G.map dateParse G.string))
+
+
+student : G.ValueSpec G.NonNull G.ObjectType Student vars
+student =
+    G.object Student
+        |> G.with (G.field "id" [] G.string)
+        |> G.with (G.field "cohortId" [] G.string)
+        |> G.with (G.field "firstName" [] G.string)
+        |> G.with (G.field "lastName" [] G.string)
+        |> G.with (G.field "github" [] G.string)
+
+
+
+-- HELPERS
+
+
+dateParse : String -> Date.Date
+dateParse =
+    Date.fromString
+        >> Result.withDefault (Date.fromTime 0)

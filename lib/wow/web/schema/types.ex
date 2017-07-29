@@ -11,6 +11,7 @@ defmodule Wow.Schema.Types do
 
   object :cohort do
     field :id, :id
+    field :campus_id, :id
     field :start_date, :string
     field :end_date, :string
 
@@ -20,6 +21,7 @@ defmodule Wow.Schema.Types do
 
   object :student do
     field :id, :id
+    field :cohort_id, :id
     field :first_name, :string
     field :last_name, :string
     field :github, :string

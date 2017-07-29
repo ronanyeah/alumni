@@ -2,16 +2,15 @@ module Main exposing (main)
 
 import Data
 import Date
+import Dict exposing (Dict)
 import Date.Extra as Extra
 import GraphQL.Client.Http as Gr
-import Json.Decode as Decode
 import Html exposing (Html, a, br, button, div, input, li, p, text)
 import Html.Attributes exposing (href, target, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Html.Keyed as Keyed
-import Http
 import Task
-import Types exposing (Cohort, Campus, Student, NewCohort)
+import Types exposing (Cohort, Campus, Student, NewCohort, AllData)
 
 
 main : Program Never Model Msg
@@ -25,7 +24,9 @@ main =
 
 
 type alias Model =
-    { campuses : List Campus
+    { campuses : Dict String Campus
+    , cohorts : Dict String Cohort
+    , students : Dict String Student
     , selectedCampus : Maybe Campus
     , selectedCohort : String
     , newCohort : Maybe NewCohort
@@ -34,12 +35,17 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    { campuses = []
+    { campuses = Dict.empty
+    , cohorts = Dict.empty
+    , students = Dict.empty
     , selectedCampus = Nothing
     , selectedCohort = ""
     , newCohort = Nothing
     }
-        ! [ getData ]
+        ! [ Data.queryAllData
+                |> Gr.sendQuery "/graph?query="
+                |> Task.attempt CbAllData
+          ]
 
 
 emptyNewCohort : NewCohort
@@ -55,17 +61,20 @@ emptyNewCohort =
 
 
 view : Model -> Html Msg
-view { campuses, selectedCampus, selectedCohort, newCohort } =
+view { campuses, cohorts, students, selectedCampus, selectedCohort, newCohort } =
     let
         cohortsView : List Cohort -> Html Msg
         cohortsView =
             List.sortBy (.startDate >> Date.toTime)
                 >> List.map
-                    (\{ id, startDate, endDate, students } ->
+                    (\{ id, startDate, endDate } ->
                         let
                             dropdown =
                                 if selectedCohort == id then
-                                    studentsView students
+                                    students
+                                        |> Dict.values
+                                        |> List.filter (.cohortId >> (==) id)
+                                        |> studentsView
                                 else
                                     div [] []
                         in
@@ -101,6 +110,7 @@ view { campuses, selectedCampus, selectedCohort, newCohort } =
         div []
             [ Keyed.ul []
                 (campuses
+                    |> Dict.values
                     |> List.map
                         (\campus ->
                             let
@@ -108,7 +118,10 @@ view { campuses, selectedCampus, selectedCohort, newCohort } =
                                     case selectedCampus of
                                         Just { id } ->
                                             if campus.id == id then
-                                                cohortsView campus.cohorts
+                                                cohorts
+                                                    |> Dict.values
+                                                    |> List.filter (.campusId >> (==) id)
+                                                    |> cohortsView
                                             else
                                                 div [] []
 
@@ -172,8 +185,8 @@ type Msg
     = AddCohort
     | AddCohortCancel
     | AddCohortSubmit
-    | CreateCb (Result Http.Error Decode.Value)
-    | Cb (Result Gr.Error (List Campus))
+    | CbCreateCohort (Result Gr.Error Cohort)
+    | CbAllData (Result Gr.Error AllData)
     | SetCampus Campus
     | SetCohort String
     | SetStartDate String
@@ -206,11 +219,12 @@ update msg model =
                                     campus
                                         |> Maybe.map
                                             (\{ id } ->
-                                                Http.send CreateCb <|
-                                                    Data.createCohort
-                                                        (formatDate startDate)
-                                                        (formatDate endDate)
-                                                        id
+                                                Data.mutationNewCohort
+                                                    (formatDate startDate)
+                                                    (formatDate endDate)
+                                                    id
+                                                    |> Gr.sendMutation "/graph?query="
+                                                    |> Task.attempt CbCreateCohort
                                             )
                                         |> Maybe.withDefault Cmd.none
                                 )
@@ -218,18 +232,27 @@ update msg model =
                 in
                     model ! [ cmd ]
 
-            Cb res ->
+            CbAllData res ->
                 case res of
-                    Ok data ->
-                        { model | campuses = data } ! []
+                    Ok { campuses, cohorts, students } ->
+                        { model
+                            | campuses = dictById campuses
+                            , cohorts = dictById cohorts
+                            , students = dictById students
+                        }
+                            ! []
 
                     Err err ->
                         model ! [ log "err" err ]
 
-            CreateCb res ->
+            CbCreateCohort res ->
                 case res of
                     Ok data ->
-                        { model | newCohort = Nothing } ! [ log "Res" data, getData ]
+                        { model
+                            | newCohort = Nothing
+                            , cohorts = Dict.insert data.id data model.cohorts
+                        }
+                            ! [ log "Res" data ]
 
                     Err err ->
                         { model | newCohort = Nothing } ! [ log "Err" err ]
@@ -307,8 +330,6 @@ update msg model =
 -- HELPERS
 
 
-getData : Cmd Msg
-getData =
-    Data.campusRequest
-        |> Gr.sendQuery "/graph?query="
-        |> Task.attempt Cb
+dictById : List { x | id : String } -> Dict String { x | id : String }
+dictById =
+    List.map (\x -> ( x.id, x )) >> Dict.fromList
