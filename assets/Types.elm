@@ -1,6 +1,18 @@
-module Types exposing (Campus, Cohort, Student, AllData, NewCohort)
+module Types exposing (Campus, Cohort, Student, AllData, CohortForm, StudentForm, Model)
 
 import Date
+import Dict exposing (Dict)
+
+
+type alias Model =
+    { campuses : Dict String Campus
+    , cohorts : Dict String Cohort
+    , students : Dict String Student
+    , selectedCampus : String
+    , selectedCohort : String
+    , cohortForm : Maybe CohortForm
+    , studentForm : Maybe StudentForm
+    }
 
 
 type alias Campus =
@@ -33,8 +45,16 @@ type alias AllData =
     }
 
 
-type alias NewCohort =
+type alias CohortForm =
     { startDate : Date.Date
     , endDate : Date.Date
-    , campus : Maybe Campus
+    , campusId : String
+    }
+
+
+type alias StudentForm =
+    { cohortId : String
+    , firstName : String
+    , lastName : String
+    , github : String
     }

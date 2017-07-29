@@ -1,7 +1,8 @@
-module Data exposing (queryAllData, mutationNewCohort)
+module Data exposing (queryAllData, mutationNewCohort, mutationNewStudent)
 
 import Date
-import Types exposing (Cohort, Campus, Student, AllData)
+import Helpers
+import Types exposing (Cohort, Campus, Student, AllData, StudentForm, CohortForm)
 import GraphQL.Request.Builder as G
 import GraphQL.Request.Builder.Arg as Arg
 import GraphQL.Request.Builder.Variable as Var
@@ -12,36 +13,48 @@ queryAllData =
     let
         query : G.Document G.Query AllData vars
         query =
-            G.queryDocument <|
-                (G.object AllData
-                    |> G.with (G.field "campuses" [] (G.list campus))
-                    |> G.with (G.field "cohorts" [] (G.list cohort))
-                    |> G.with (G.field "students" [] (G.list student))
-                )
+            G.object AllData
+                |> G.with (G.field "campuses" [] (G.list campus))
+                |> G.with (G.field "cohorts" [] (G.list cohort))
+                |> G.with (G.field "students" [] (G.list student))
+                |> G.queryDocument
     in
         G.request () query
 
 
-mutationNewCohort : String -> String -> String -> G.Request G.Mutation Cohort
-mutationNewCohort startDate endDate campusId =
+mutationNewCohort : CohortForm -> G.Request G.Mutation Cohort
+mutationNewCohort form =
     let
-        mutation : G.Document G.Mutation Cohort { a | campusId : String, endDate : String, startDate : String }
+        mutation : G.Document G.Mutation Cohort CohortForm
         mutation =
-            G.mutationDocument <|
-                G.extract <|
-                    G.field "cohort"
-                        [ ( "startDate", Arg.variable (Var.required "startDate" .startDate Var.string) )
-                        , ( "endDate", Arg.variable (Var.required "endDate" .endDate Var.string) )
-                        , ( "campusId", Arg.variable (Var.required "campusId" .campusId Var.string) )
-                        ]
-                        cohort
+            G.field "cohort"
+                [ ( "startDate", Arg.variable (Var.required "startDate" (.startDate >> Helpers.formatDate) Var.string) )
+                , ( "endDate", Arg.variable (Var.required "endDate" (.endDate >> Helpers.formatDate) Var.string) )
+                , ( "campusId", Arg.variable (Var.required "campusId" .campusId Var.string) )
+                ]
+                cohort
+                |> G.extract
+                |> G.mutationDocument
     in
-        G.request
-            { startDate = startDate
-            , endDate = endDate
-            , campusId = campusId
-            }
-            mutation
+        G.request form mutation
+
+
+mutationNewStudent : StudentForm -> G.Request G.Mutation Student
+mutationNewStudent form =
+    let
+        mutation : G.Document G.Mutation Student StudentForm
+        mutation =
+            G.field "student"
+                [ ( "cohortId", Arg.variable (Var.required "cohortId" .cohortId Var.string) )
+                , ( "firstName", Arg.variable (Var.required "firstName" .firstName Var.string) )
+                , ( "lastName", Arg.variable (Var.required "lastName" .lastName Var.string) )
+                , ( "github", Arg.variable (Var.required "github" .github Var.string) )
+                ]
+                student
+                |> G.extract
+                |> G.mutationDocument
+    in
+        G.request form mutation
 
 
 
