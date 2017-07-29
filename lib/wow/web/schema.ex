@@ -14,5 +14,20 @@ defmodule Wow.Schema do
     field :students, list_of(:student) do
       resolve &Wow.StudentResolver.all/2
     end
+
+    field :campus, type: :campus do
+      arg :id, non_null(:id)
+      resolve &Wow.CampusResolver.find/2
+    end
+
+    mutation do
+      field :cohort, type: :cohort do
+        arg :campus_id, non_null(:string)
+        arg :start_date, non_null(:string)
+        arg :end_date, non_null(:string)
+
+        resolve &Wow.CohortResolver.create/2
+      end
+    end
   end
 end

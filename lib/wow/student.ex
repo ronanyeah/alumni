@@ -17,7 +17,7 @@ defmodule Wow.Student do
   @doc false
   def changeset(%Student{} = student, attrs) do
     student
-    |> cast(attrs, [:first_name, :last_name, :github])
-    |> validate_required([:first_name, :last_name, :github])
+    |> cast(attrs, [:cohort_id, :first_name, :last_name, :github])
+    |> validate_required([:cohort_id, :first_name, :last_name, :github])
   end
 end

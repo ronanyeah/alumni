@@ -1,107 +1,61 @@
-module Data exposing (all)
+module Data exposing (campusQuery, campusRequest, createCohort)
 
-import Http exposing (get)
+import Date
+import Http exposing (post, emptyBody)
 import Json.Decode as Decode
-import Json.Decode.Extra as Extra
-import Json.Decode.Pipeline as Pipeline
 import Types exposing (Cohort, Campus, Student)
+import GraphQL.Request.Builder as G
 
 
--- DATA
-
-
-all : Http.Request (List Campus)
-all =
-    graph
-        (Field "campuses"
-            [ Field "id" []
-            , Field "name" []
-            , Field "cohorts"
-                [ Field "id" []
-                , Field "startDate" []
-                , Field "endDate" []
-                , Field "students"
-                    [ Field "id" []
-                    , Field "firstName" []
-                    , Field "lastName" []
-                    , Field "github" []
-                    ]
-                ]
-            ]
-        )
-        (Decode.at [ "data", "campuses" ] <|
-            Decode.list <|
-                campusDecoder
-        )
-
-
-
--- SUPPORT
-
-
-type Field
-    = Field String (List Field)
-
-
-fieldToString : Field -> String
-fieldToString (Field name fields) =
+campusQuery : G.Document G.Query (List Campus) vars
+campusQuery =
     let
-        append =
-            if List.isEmpty fields then
-                " "
-            else
-                fields
-                    |> List.map fieldToString
-                    |> List.foldr (++) ""
-                    |> wrapWithBraces
+        campus =
+            G.object Campus
+                |> G.with (G.field "id" [] G.string)
+                |> G.with (G.field "name" [] G.string)
+                |> G.with (G.field "cohorts" [] (G.list cohort))
+
+        dateParse : String -> Date.Date
+        dateParse =
+            Date.fromString
+                >> Result.withDefault (Date.fromTime 0)
+
+        cohort =
+            G.object Cohort
+                |> G.with (G.field "id" [] G.string)
+                |> G.with (G.field "startDate" [] (G.map dateParse G.string))
+                |> G.with (G.field "endDate" [] (G.map dateParse G.string))
+                |> G.with (G.field "students" [] (G.list student))
+
+        student =
+            G.object Student
+                |> G.with (G.field "id" [] G.string)
+                |> G.with (G.field "firstName" [] G.string)
+                |> G.with (G.field "lastName" [] G.string)
+                |> G.with (G.field "github" [] G.string)
     in
-        name ++ append
+        G.queryDocument <|
+            G.extract <|
+                G.field "campuses"
+                    []
+                    (G.list campus)
 
 
-graph : Field -> Decode.Decoder a -> Http.Request a
-graph query decoder =
+campusRequest : G.Request G.Query (List Campus)
+campusRequest =
+    G.request () campusQuery
+
+
+createCohort : String -> String -> String -> Http.Request Decode.Value
+createCohort startDate endDate campus =
     let
+        query =
+            "mutation{ cohort(campus_id: \"" ++ campus ++ "\" startDate: \"" ++ startDate ++ "\" endDate: \"" ++ endDate ++ "\") { id } }"
+
         url =
             query
-                |> fieldToString
-                |> wrapWithBraces
                 |> Http.encodeUri
                 |> (++) "/graph?query="
     in
-        get url decoder
-
-
-wrapWithBraces : String -> String
-wrapWithBraces =
-    (++) "{"
-        >> flip (++) "}"
-
-
-
--- DECODERS
-
-
-campusDecoder : Decode.Decoder Campus
-campusDecoder =
-    Pipeline.decode Campus
-        |> Pipeline.required "id" Decode.string
-        |> Pipeline.required "name" Decode.string
-        |> Pipeline.optional "cohorts" (Decode.list cohortDecoder) []
-
-
-cohortDecoder : Decode.Decoder Cohort
-cohortDecoder =
-    Pipeline.decode Cohort
-        |> Pipeline.required "id" Decode.string
-        |> Pipeline.required "startDate" Extra.date
-        |> Pipeline.required "endDate" Extra.date
-        |> Pipeline.optional "students" (Decode.list studentDecoder) []
-
-
-studentDecoder : Decode.Decoder Student
-studentDecoder =
-    Pipeline.decode Student
-        |> Pipeline.required "id" Decode.string
-        |> Pipeline.required "firstName" Decode.string
-        |> Pipeline.required "lastName" Decode.string
-        |> Pipeline.required "github" Decode.string
+        post url emptyBody Decode.value

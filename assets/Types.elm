@@ -1,4 +1,4 @@
-module Types exposing (Campus, Cohort, Student)
+module Types exposing (Campus, Cohort, Student, NewCohort)
 
 import Date
 
@@ -23,4 +23,11 @@ type alias Student =
     , firstName : String
     , lastName : String
     , github : String
+    }
+
+
+type alias NewCohort =
+    { startDate : Date.Date
+    , endDate : Date.Date
+    , campus : Maybe Campus
     }

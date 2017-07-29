@@ -17,7 +17,7 @@ defmodule Wow.Cohort do
   @doc false
   def changeset(%Cohort{} = cohort, attrs) do
     cohort
-    |> cast(attrs, [:start_date, :end_date])
-    |> validate_required([:start_date, :end_date])
+    |> cast(attrs, [:campus_id, :start_date, :end_date])
+    |> validate_required([:campus_id, :start_date, :end_date])
   end
 end
