@@ -2,183 +2,118 @@ module View exposing (view)
 
 import Date exposing (Date)
 import Dict
-import Html.Keyed as Keyed
+import Element exposing (el, text, row, when)
+import Element.Attributes as Attr exposing (center, height, px, verticalCenter)
+import Element.Events as Events exposing (onClick)
+import Element.Keyed as Keyed
 import Helpers
-import Html exposing (Html, a, br, button, div, input, li, p, text)
+import Html exposing (Html)
 import Html.Attributes exposing (href, target, type_, value)
-import Html.Events exposing (onClick, onInput)
-import Maybe.Extra as Maybe
-import Update exposing (Msg(..))
+import Styling exposing (style, Styles(..))
 import Types exposing (Cohort, Student, Model)
+import Update exposing (Msg(..))
 
 
 view : Model -> Html Msg
 view { campuses, cohorts, students, selectedCampus, selectedCohort, cohortForm, studentForm } =
     let
-        cohortsView : List Cohort -> Html Msg
-        cohortsView =
-            sortByStartDate
-                >> List.map
-                    (\{ id, startDate, endDate } ->
-                        let
-                            dropdown =
-                                if selectedCohort == id then
-                                    students
-                                        |> Dict.values
-                                        |> List.filter (.cohortId >> (==) id)
-                                        |> studentsView
-                                else
-                                    div [] []
-                        in
-                            ( id
-                            , li []
-                                [ button [ onClick <| SelectCohort id ] [ dateText startDate endDate ]
-                                , dropdown
-                                ]
-                            )
-                    )
-                >> Keyed.ol []
-
-        studentsView : List Student -> Html Msg
-        studentsView studentList =
-            if List.isEmpty studentList then
-                p [] [ text "No students!" ]
-            else
-                Keyed.ul []
-                    (studentList
-                        |> List.map
-                            (\{ id, firstName, lastName, github } ->
-                                ( id
-                                , li []
-                                    [ p [] [ text <| "Name: " ++ firstName ++ " " ++ lastName ]
-                                    , p []
-                                        [ text <| "GitHub: "
-                                        , a
-                                            [ href <| "https://github.com/" ++ github
-                                            , target "_blank"
-                                            ]
-                                            [ text <| "/" ++ github ]
-                                        ]
-                                    ]
-                                )
-                            )
-                    )
-
         campusesView =
-            Keyed.ul []
+            Element.column None
+                [ center, Attr.width (Attr.percent 100) ]
                 (campuses
                     |> Dict.values
-                    |> List.map
-                        (\{ id, name } ->
+                    |> List.foldl
+                        (\{ id, name } arr ->
                             let
-                                dropdown =
-                                    if id == selectedCampus then
-                                        cohorts
-                                            |> Dict.values
-                                            |> List.filter (.campusId >> (==) id)
-                                            |> cohortsView
-                                    else
-                                        div [] []
+                                drop =
+                                    cohorts
+                                        |> Dict.values
+                                        |> List.filter (.campusId >> (==) selectedCampus)
+                                        |> cohortsView
+
+                                new =
+                                    el CampusImage
+                                        [ Attr.width (Attr.percent 100)
+                                        , Attr.height (Attr.px 200)
+                                        , onClick <| SelectCampus id
+                                        ]
+                                    <|
+                                        el CampusText [ Attr.padding 7, center, verticalCenter ] <|
+                                            Element.text name
                             in
-                                ( id
-                                , li []
-                                    [ button [ onClick <| SelectCampus id ] [ text name ]
-                                    , dropdown
-                                    ]
-                                )
+                                if selectedCampus == id then
+                                    arr ++ [ new, drop ]
+                                else
+                                    arr ++ [ new ]
                         )
+                        []
                 )
 
-        createCohortForm =
-            cohortForm
-                |> Maybe.unwrap
-                    (button
-                        [ onClick CohortFormEnable ]
-                        [ text "Add Cohort" ]
-                    )
-                    (\{ startDate, endDate, campusId } ->
-                        Dict.get campusId campuses
-                            |> Maybe.unwrap
-                                (div
-                                    []
-                                    (text "Please select campus: "
-                                        :: (campuses
-                                                |> Dict.values
-                                                |> List.map
-                                                    (\campus ->
-                                                        button [ onClick <| CohortFormSetCampus campus.id ]
-                                                            [ text campus.name ]
-                                                    )
-                                           )
-                                    )
+        cohortsView xs =
+            let
+                xsv =
+                    Element.when (selectedCohort /= "" && selectedCampus /= "")
+                        (students
+                            |> Dict.values
+                            |> List.filter (.cohortId >> (==) selectedCohort)
+                            |> studentsView
+                        )
+            in
+                Element.column None
+                    []
+                    [ xs
+                        |> List.map
+                            (\{ id, startDate, endDate } ->
+                                ( id
+                                , Element.row None
+                                    [ onClick <| SelectCohort id ]
+                                    [ Element.button <| dateText startDate endDate
+                                    ]
                                 )
-                                (\{ name } ->
-                                    div []
-                                        [ p [] [ text <| "Campus Selected: " ++ name ]
-                                        , p [] [ text "Please enter starting and finishing dates:" ]
-                                        , input [ type_ "date", dateInputValue startDate, onInput CohortFormSetStartDate ] []
-                                        , input [ type_ "date", dateInputValue endDate, onInput CohortFormSetEndDate ] []
-                                        , br [] []
-                                        , button [ onClick CohortFormSubmit ] [ text "Submit" ]
-                                        , button [ onClick CohortFormCancel ] [ text "Cancel" ]
-                                        ]
-                                )
-                    )
+                            )
+                        |> Keyed.row None [ center ]
+                    , xsv
+                    ]
 
-        createStudentForm =
-            studentForm
-                |> Maybe.unwrap
-                    (button
-                        [ onClick StudentFormEnable ]
-                        [ text "Add Student" ]
-                    )
-                    (\{ cohortId, firstName, lastName, github } ->
-                        Dict.get cohortId cohorts
-                            |> Maybe.unwrap
-                                (div
-                                    []
-                                    (text "Please select cohort: "
-                                        :: (campuses
-                                                |> Dict.values
-                                                |> List.map
-                                                    (\{ name, id } ->
-                                                        div []
-                                                            (p []
-                                                                [ text <| "Campus: " ++ name
-                                                                ]
-                                                                :: (cohorts
-                                                                        |> Dict.values
-                                                                        |> List.filter (.campusId >> (==) id)
-                                                                        |> List.indexedMap
-                                                                            (\i cohort ->
-                                                                                button [ onClick <| StudentFormSetCohort cohort.id ]
-                                                                                    [ text <| toString <| i + 1 ]
-                                                                            )
-                                                                   )
-                                                            )
-                                                    )
-                                           )
-                                    )
-                                )
-                                (\cohort ->
-                                    div []
-                                        [ p [] [ text <| "Cohort Selected: " ++ cohort.id ]
-                                        , p [] [ text "Please enter details:" ]
-                                        , input [ type_ "text", value firstName, onInput StudentFormSetFirstName ] []
-                                        , input [ type_ "text", value lastName, onInput StudentFormSetLastName ] []
-                                        , input [ type_ "text", value github, onInput StudentFormSetGithub ] []
-                                        , br [] []
-                                        , button [ onClick StudentFormSubmit ] [ text "Submit" ]
-                                        , button [ onClick StudentFormCancel ] [ text "Cancel" ]
+        studentsView studentList =
+            if List.isEmpty studentList then
+                Element.text "No students!"
+            else
+                Element.grid None
+                    { columns = [ px 100, px 100, px 100, px 100 ]
+                    , rows =
+                        [ px 100
+                        , px 100
+                        , px 100
+                        , px 100
+                        ]
+                    }
+                    [ center ]
+                    (studentList
+                        |> List.indexedMap
+                            (\i { id, firstName, lastName, github } ->
+                                Element.area { start = ( i // 4, rem i 4 ), width = 1, height = 1 }
+                                    (Element.textLayout None
+                                        []
+                                        [ Element.textLayout None [] [ Element.text ("Name: " ++ firstName ++ " " ++ lastName) ]
+                                        , Element.text "GitHub: "
+                                        , Element.link ("https://github.com/" ++ github) <| Element.text ("/" ++ github)
                                         ]
-                                )
+                                    )
+                            )
                     )
     in
-        div []
-            [ campusesView
-            , createCohortForm
-            , createStudentForm
-            ]
+        Element.viewport style <|
+            Element.column None
+                []
+                [ Element.row Header
+                    [ Attr.paddingXY 0 15, center, verticalCenter ]
+                    [ el HeaderText [ Attr.paddingRight 15 ] <| text "Founders & Coders"
+                    , Element.image "/logo.png" Image [ height (px 50) ] Element.empty
+                    , el HeaderText [ Attr.paddingLeft 15 ] <| text "Alumni"
+                    ]
+                , campusesView
+                ]
 
 
 
@@ -195,10 +130,10 @@ dateInputValue =
     Helpers.formatDate >> value
 
 
-dateText : Date.Date -> Date.Date -> Html Msg
+dateText : Date.Date -> Date.Date -> Element.Element a b c
 dateText start end =
     let
         render date =
             (date |> Date.month |> toString) ++ " " ++ (date |> Date.year |> toString)
     in
-        text (render start ++ " to " ++ render end)
+        Element.text (render start ++ " to " ++ render end)

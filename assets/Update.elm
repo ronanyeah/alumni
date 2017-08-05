@@ -143,7 +143,7 @@ update msg model =
                         else
                             campusId
                 in
-                    { model | selectedCampus = selectedCampus } ! []
+                    { model | selectedCampus = selectedCampus, selectedCohort = "" } ! []
 
             SelectCohort id ->
                 let
