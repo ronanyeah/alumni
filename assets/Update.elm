@@ -1,239 +1,310 @@
-module Update exposing (update, Msg(..))
+module Update exposing (update)
 
+import Animation exposing (deg)
 import Data
 import Date
 import Dict exposing (Dict)
-import Fixtures exposing (emptyNewCohort, emptyStudentForm)
+import Fixtures exposing (emptyNewCohort, emptyStudentForm, frontInit, backInit)
+import Helpers exposing (log)
 import GraphQL.Client.Http as Gr
 import Maybe.Extra as Maybe
-import Types exposing (Cohort, Student, AllData, Model)
+import Model exposing (Cohort, Student, AllData, Model, Msg(..))
 import Task
-
-
-type Msg
-    = CbAllData (Result Gr.Error AllData)
-    | CbCreateCohort (Result Gr.Error Cohort)
-    | CbCreateStudent (Result Gr.Error Student)
-    | CohortFormCancel
-    | CohortFormEnable
-    | CohortFormSetCampus String
-    | CohortFormSetEndDate String
-    | CohortFormSetStartDate String
-    | CohortFormSubmit
-    | SelectCampus String
-    | SelectCohort String
-    | StudentFormCancel
-    | StudentFormEnable
-    | StudentFormSetCohort String
-    | StudentFormSetFirstName String
-    | StudentFormSetLastName String
-    | StudentFormSetGithub String
-    | StudentFormSubmit
+import Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        log l v =
+    case msg of
+        Flip k ->
             let
-                _ =
-                    Debug.log l v
+                ( front, back ) =
+                    model.cohortHover
+                        |> Dict.get k
+                        |> Maybe.withDefault ( frontInit, backInit )
+
+                frontAnim =
+                    Animation.interrupt
+                        [ Animation.toWith
+                            (Animation.easing
+                                { duration = 0.2 * Time.second
+                                , ease = identity
+                                }
+                            )
+                            [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
+                            , Animation.opacity 0
+                            ]
+                        ]
+                        front
+
+                backAnim =
+                    Animation.interrupt
+                        [ Animation.toWith
+                            (Animation.easing
+                                { duration = 0.2 * Time.second
+                                , ease = identity
+                                }
+                            )
+                            [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
+                            , Animation.opacity 1
+                            ]
+                        ]
+                        back
             in
-                Cmd.none
-    in
-        case msg of
-            CbAllData res ->
-                case res of
-                    Ok { campuses, cohorts, students } ->
-                        { model
-                            | campuses = dictById campuses
-                            , cohorts = dictById cohorts
-                            , students = dictById students
-                        }
-                            ! []
+                ( { model
+                    | cohortHover =
+                        model.cohortHover
+                            |> Dict.insert k ( frontAnim, backAnim )
+                  }
+                , Cmd.none
+                )
 
-                    Err err ->
-                        model ! [ log "err" err ]
+        FlipBack k ->
+            let
+                ( front, back ) =
+                    model.cohortHover
+                        |> Dict.get k
+                        |> Maybe.withDefault ( frontInit, backInit )
 
-            CbCreateCohort res ->
-                case res of
-                    Ok data ->
-                        { model
-                            | cohortForm = Nothing
-                            , cohorts = Dict.insert data.id data model.cohorts
-                        }
-                            ! [ log "Res" data ]
+                frontAnim =
+                    Animation.interrupt
+                        [ Animation.toWith
+                            (Animation.easing
+                                { duration = 0.2 * Time.second
+                                , ease = identity
+                                }
+                            )
+                            [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
+                            , Animation.opacity 1
+                            ]
+                        ]
+                        front
 
-                    Err err ->
-                        { model | cohortForm = Nothing } ! [ log "Err" err ]
+                backAnim =
+                    Animation.interrupt
+                        [ Animation.toWith
+                            (Animation.easing
+                                { duration = 0.2 * Time.second
+                                , ease = identity
+                                }
+                            )
+                            [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
+                            , Animation.opacity 0
+                            ]
+                        ]
+                        back
+            in
+                ( { model
+                    | cohortHover =
+                        model.cohortHover
+                            |> Dict.insert k ( frontAnim, backAnim )
+                  }
+                , Cmd.none
+                )
 
-            CbCreateStudent res ->
-                case res of
-                    Ok data ->
-                        { model
-                            | studentForm = Nothing
-                            , students = Dict.insert data.id data model.students
-                        }
-                            ! [ log "Res" data ]
+        Animate animMsg ->
+            { model
+                | cohortHover =
+                    Dict.map
+                        (\_ ( front, back ) ->
+                            ( Animation.update animMsg front, Animation.update animMsg back )
+                        )
+                        model.cohortHover
+            }
+                ! []
 
-                    Err err ->
-                        { model | cohortForm = Nothing } ! [ log "Err" err ]
+        CbAllData res ->
+            case res of
+                Ok { campuses, cohorts, students } ->
+                    { model
+                        | campuses = dictById campuses
+                        , cohorts = dictById cohorts
+                        , students = dictById students
+                    }
+                        ! []
 
-            CohortFormCancel ->
-                { model | cohortForm = Nothing } ! []
+                Err err ->
+                    model ! [ log "err" err ]
 
-            CohortFormEnable ->
-                { model | cohortForm = Just emptyNewCohort } ! []
+        CbCreateCohort res ->
+            case res of
+                Ok data ->
+                    { model
+                        | cohortForm = Nothing
+                        , cohorts = Dict.insert data.id data model.cohorts
+                    }
+                        ! [ log "Res" data ]
 
-            CohortFormSetCampus campusId ->
-                case model.cohortForm of
-                    Just form ->
-                        { model | cohortForm = Just { form | campusId = campusId } } ! []
+                Err err ->
+                    { model | cohortForm = Nothing } ! [ log "Err" err ]
 
-                    Nothing ->
-                        model ! []
+        CbCreateStudent res ->
+            case res of
+                Ok data ->
+                    { model
+                        | studentForm = Nothing
+                        , students = Dict.insert data.id data model.students
+                    }
+                        ! [ log "Res" data ]
 
-            CohortFormSetEndDate str ->
-                let
-                    newDate =
-                        dateFromString str
+                Err err ->
+                    { model | cohortForm = Nothing } ! [ log "Err" err ]
 
-                    cohortForm =
-                        model.cohortForm
-                            |> Maybe.map
-                                (\form ->
-                                    { form | endDate = newDate }
-                                )
-                in
-                    { model | cohortForm = cohortForm } ! []
+        CohortFormCancel ->
+            { model | cohortForm = Nothing } ! []
 
-            CohortFormSetStartDate str ->
-                let
-                    newDate =
-                        dateFromString str
+        CohortFormEnable ->
+            { model | cohortForm = Just emptyNewCohort } ! []
 
-                    cohortForm =
-                        model.cohortForm
-                            |> Maybe.map
-                                (\form ->
-                                    { form | startDate = newDate }
-                                )
-                in
-                    { model | cohortForm = cohortForm } ! []
+        CohortFormSetCampus campusId ->
+            case model.cohortForm of
+                Just form ->
+                    { model | cohortForm = Just { form | campusId = campusId } } ! []
 
-            CohortFormSubmit ->
-                let
-                    cmd =
-                        model.cohortForm
-                            |> Maybe.unwrap
-                                Cmd.none
-                                (\form ->
-                                    Data.mutationNewCohort form
-                                        |> Gr.sendMutation "/graph?query="
-                                        |> Task.attempt CbCreateCohort
-                                )
-                in
-                    model ! [ cmd ]
+                Nothing ->
+                    model ! []
 
-            SelectCampus campusId ->
-                let
-                    selectedCampus =
-                        if campusId == model.selectedCampus then
-                            ""
-                        else
-                            campusId
-                in
-                    { model | selectedCampus = selectedCampus, selectedCohort = "" } ! []
+        CohortFormSetEndDate str ->
+            let
+                newDate =
+                    dateFromString str
 
-            SelectCohort id ->
-                let
-                    selectedCohort =
-                        if id == model.selectedCohort then
-                            ""
-                        else
-                            id
-                in
-                    { model | selectedCohort = selectedCohort } ! []
+                cohortForm =
+                    model.cohortForm
+                        |> Maybe.map
+                            (\form ->
+                                { form | endDate = newDate }
+                            )
+            in
+                { model | cohortForm = cohortForm } ! []
 
-            StudentFormCancel ->
-                { model | studentForm = Nothing } ! []
+        CohortFormSetStartDate str ->
+            let
+                newDate =
+                    dateFromString str
 
-            StudentFormEnable ->
-                { model | studentForm = Just emptyStudentForm } ! []
+                cohortForm =
+                    model.cohortForm
+                        |> Maybe.map
+                            (\form ->
+                                { form | startDate = newDate }
+                            )
+            in
+                { model | cohortForm = cohortForm } ! []
 
-            StudentFormSetFirstName str ->
-                let
-                    newModel =
-                        model.studentForm
-                            |> Maybe.unwrap
-                                model
-                                (\form ->
-                                    { model
-                                        | studentForm =
-                                            Just { form | firstName = str }
-                                    }
-                                )
-                in
-                    newModel ! []
+        CohortFormSubmit ->
+            let
+                cmd =
+                    model.cohortForm
+                        |> Maybe.unwrap
+                            Cmd.none
+                            (\form ->
+                                Data.mutationNewCohort form
+                                    |> Gr.sendMutation "/graph?query="
+                                    |> Task.attempt CbCreateCohort
+                            )
+            in
+                model ! [ cmd ]
 
-            StudentFormSetLastName str ->
-                let
-                    newModel =
-                        model.studentForm
-                            |> Maybe.unwrap
-                                model
-                                (\form ->
-                                    { model
-                                        | studentForm =
-                                            Just { form | lastName = str }
-                                    }
-                                )
-                in
-                    newModel ! []
+        SelectCampus campusId ->
+            let
+                selectedCampus =
+                    if campusId == model.selectedCampus then
+                        ""
+                    else
+                        campusId
+            in
+                { model | selectedCampus = selectedCampus, selectedCohort = "" } ! []
 
-            StudentFormSetCohort str ->
-                let
-                    newModel =
-                        model.studentForm
-                            |> Maybe.unwrap
-                                model
-                                (\form ->
-                                    { model
-                                        | studentForm =
-                                            Just { form | cohortId = str }
-                                    }
-                                )
-                in
-                    newModel ! []
+        SelectCohort id ->
+            let
+                selectedCohort =
+                    if id == model.selectedCohort then
+                        ""
+                    else
+                        id
+            in
+                { model | selectedCohort = selectedCohort } ! []
 
-            StudentFormSetGithub str ->
-                let
-                    newModel =
-                        model.studentForm
-                            |> Maybe.unwrap
-                                model
-                                (\form ->
-                                    { model
-                                        | studentForm =
-                                            Just { form | github = str }
-                                    }
-                                )
-                in
-                    newModel ! []
+        StudentFormCancel ->
+            { model | studentForm = Nothing } ! []
 
-            StudentFormSubmit ->
-                let
-                    cmd =
-                        model.studentForm
-                            |> Maybe.unwrap
-                                Cmd.none
-                                (\form ->
-                                    Data.mutationNewStudent form
-                                        |> Gr.sendMutation "/graph?query="
-                                        |> Task.attempt CbCreateStudent
-                                )
-                in
-                    model ! [ cmd ]
+        StudentFormEnable ->
+            { model | studentForm = Just emptyStudentForm } ! []
+
+        StudentFormSetFirstName str ->
+            let
+                newModel =
+                    model.studentForm
+                        |> Maybe.unwrap
+                            model
+                            (\form ->
+                                { model
+                                    | studentForm =
+                                        Just { form | firstName = str }
+                                }
+                            )
+            in
+                newModel ! []
+
+        StudentFormSetLastName str ->
+            let
+                newModel =
+                    model.studentForm
+                        |> Maybe.unwrap
+                            model
+                            (\form ->
+                                { model
+                                    | studentForm =
+                                        Just { form | lastName = str }
+                                }
+                            )
+            in
+                newModel ! []
+
+        StudentFormSetCohort str ->
+            let
+                newModel =
+                    model.studentForm
+                        |> Maybe.unwrap
+                            model
+                            (\form ->
+                                { model
+                                    | studentForm =
+                                        Just { form | cohortId = str }
+                                }
+                            )
+            in
+                newModel ! []
+
+        StudentFormSetGithub str ->
+            let
+                newModel =
+                    model.studentForm
+                        |> Maybe.unwrap
+                            model
+                            (\form ->
+                                { model
+                                    | studentForm =
+                                        Just { form | github = str }
+                                }
+                            )
+            in
+                newModel ! []
+
+        StudentFormSubmit ->
+            let
+                cmd =
+                    model.studentForm
+                        |> Maybe.unwrap
+                            Cmd.none
+                            (\form ->
+                                Data.mutationNewStudent form
+                                    |> Gr.sendMutation "/graph?query="
+                                    |> Task.attempt CbCreateStudent
+                            )
+            in
+                model ! [ cmd ]
 
 
 

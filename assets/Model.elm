@@ -1,7 +1,9 @@
-module Types exposing (Campus, Cohort, Student, AllData, CohortForm, StudentForm, Model)
+module Model exposing (Campus, Cohort, Student, AllData, CohortForm, StudentForm, Model, Msg(..))
 
+import Animation
 import Date
 import Dict exposing (Dict)
+import GraphQL.Client.Http as Gr
 
 
 type alias Model =
@@ -12,6 +14,7 @@ type alias Model =
     , selectedCohort : String
     , cohortForm : Maybe CohortForm
     , studentForm : Maybe StudentForm
+    , cohortHover : Dict String ( Animation.State, Animation.State )
     }
 
 
@@ -33,7 +36,6 @@ type alias Student =
     { id : String
     , cohortId : String
     , firstName : String
-    , lastName : String
     , github : String
     }
 
@@ -58,3 +60,27 @@ type alias StudentForm =
     , lastName : String
     , github : String
     }
+
+
+type Msg
+    = Animate Animation.Msg
+    | Flip String
+    | FlipBack String
+    | CbAllData (Result Gr.Error AllData)
+    | CbCreateCohort (Result Gr.Error Cohort)
+    | CbCreateStudent (Result Gr.Error Student)
+    | CohortFormCancel
+    | CohortFormEnable
+    | CohortFormSetCampus String
+    | CohortFormSetEndDate String
+    | CohortFormSetStartDate String
+    | CohortFormSubmit
+    | SelectCampus String
+    | SelectCohort String
+    | StudentFormCancel
+    | StudentFormEnable
+    | StudentFormSetCohort String
+    | StudentFormSetFirstName String
+    | StudentFormSetLastName String
+    | StudentFormSetGithub String
+    | StudentFormSubmit

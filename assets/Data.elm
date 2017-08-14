@@ -2,7 +2,7 @@ module Data exposing (queryAllData, mutationNewCohort, mutationNewStudent)
 
 import Date
 import Helpers
-import Types exposing (Cohort, Campus, Student, AllData, StudentForm, CohortForm)
+import Model exposing (Cohort, Campus, Student, AllData, StudentForm, CohortForm)
 import GraphQL.Request.Builder as G
 import GraphQL.Request.Builder.Arg as Arg
 import GraphQL.Request.Builder.Variable as Var
@@ -83,7 +83,6 @@ student =
         |> G.with (G.field "id" [] G.string)
         |> G.with (G.field "cohortId" [] G.string)
         |> G.with (G.field "firstName" [] G.string)
-        |> G.with (G.field "lastName" [] G.string)
         |> G.with (G.field "github" [] G.string)
 
 
