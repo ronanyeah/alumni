@@ -48,8 +48,8 @@ styling =
         , style Red [ facFont, Color.background red, Style.cursor "crosshair" ]
         , style StudentImg [ Border.rounded 25 ]
         , style Words
-            [ Bg.image "url(https://foundersandcoders.com/assets/fac-teamwork.jpg)"
-            , Color.background blue
+            [ Color.background <| rgb 235 235 235
+            , Bg.image "url(https://foundersandcoders.com/assets/fac-teamwork.jpg)"
             , Font.size 80
             , facFont
             , Style.cursor "pointer"

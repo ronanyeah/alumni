@@ -1,11 +1,11 @@
 module View exposing (view)
 
-import Animation exposing (deg)
+import Animation
 import Date exposing (Date)
 import Dict
 import List.Extra exposing (greedyGroupsOf)
 import Element exposing (Element, circle, column, empty, el, image, link, text, row, viewport, when, whenJust)
-import Element.Attributes as Attr exposing (center, height, padding, paddingXY, percent, px, spacing, verticalCenter, width)
+import Element.Attributes as Attr exposing (center, height, padding, paddingXY, px, spacing, verticalCenter, width)
 import Element.Events as Events exposing (onClick)
 import Fixtures exposing (frontInit, backInit)
 import Html exposing (Html)
@@ -62,16 +62,6 @@ view { campuses, cohorts, students, selectedCampus, selectedCohort, cohortHover 
                         |> List.foldl
                             (\{ id, name } arr ->
                                 let
-                                    campusImage =
-                                        el CampusImage
-                                            [ width (percent 100)
-                                            , height (px 200)
-                                            , onClick <| SelectCampus id
-                                            ]
-                                        <|
-                                            el CampusText [ padding 7, center, verticalCenter ] <|
-                                                text name
-
                                     pic =
                                         row None
                                             [ center
@@ -134,9 +124,21 @@ view { campuses, cohorts, students, selectedCampus, selectedCohort, cohortHover 
                             (\{ firstName, github } ->
                                 column None
                                     [ width <| px 100, height <| px 100, center, padding 5 ]
-                                    [ image "http://lorempixel.com/200/200/people/" StudentImg [ width <| px 50, height <| px 50, padding 3 ] empty
+                                    [ image "http://lorempixel.com/200/200/people/"
+                                        StudentImg
+                                        [ width <| px 50
+                                        , height <| px 50
+                                        , padding 3
+                                        ]
+                                        empty
                                     , el HeaderText [ padding 3 ] <| text firstName
-                                    , link ("https://github.com/" ++ github) <| el None [ Attr.target "_blank", padding 3 ] <| image "/gh.svg" None [] empty
+                                    , link ("https://github.com/" ++ github) <|
+                                        el None
+                                            [ Attr.target "_blank"
+                                            , padding 3
+                                            ]
+                                        <|
+                                            image "/gh.svg" None [] empty
                                     ]
                             )
                         |> greedyGroupsOf 4

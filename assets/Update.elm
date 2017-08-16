@@ -1,15 +1,10 @@
 module Update exposing (update)
 
 import Animation exposing (deg)
-import Data
-import Date
-import Dict exposing (Dict)
-import Fixtures exposing (emptyNewCohort, emptyStudentForm, frontInit, backInit)
-import Helpers exposing (log)
-import GraphQL.Client.Http as Gr
-import Maybe.Extra as Maybe
-import Model exposing (Cohort, Student, AllData, Model, Msg(..))
-import Task
+import Dict
+import Fixtures exposing (frontInit, backInit)
+import Helpers exposing (log, dictById)
+import Model exposing (Model, Msg(..))
 import Time
 
 
@@ -126,86 +121,6 @@ update msg model =
                 Err err ->
                     model ! [ log "err" err ]
 
-        CbCreateCohort res ->
-            case res of
-                Ok data ->
-                    { model
-                        | cohortForm = Nothing
-                        , cohorts = Dict.insert data.id data model.cohorts
-                    }
-                        ! [ log "Res" data ]
-
-                Err err ->
-                    { model | cohortForm = Nothing } ! [ log "Err" err ]
-
-        CbCreateStudent res ->
-            case res of
-                Ok data ->
-                    { model
-                        | studentForm = Nothing
-                        , students = Dict.insert data.id data model.students
-                    }
-                        ! [ log "Res" data ]
-
-                Err err ->
-                    { model | cohortForm = Nothing } ! [ log "Err" err ]
-
-        CohortFormCancel ->
-            { model | cohortForm = Nothing } ! []
-
-        CohortFormEnable ->
-            { model | cohortForm = Just emptyNewCohort } ! []
-
-        CohortFormSetCampus campusId ->
-            case model.cohortForm of
-                Just form ->
-                    { model | cohortForm = Just { form | campusId = campusId } } ! []
-
-                Nothing ->
-                    model ! []
-
-        CohortFormSetEndDate str ->
-            let
-                newDate =
-                    dateFromString str
-
-                cohortForm =
-                    model.cohortForm
-                        |> Maybe.map
-                            (\form ->
-                                { form | endDate = newDate }
-                            )
-            in
-                { model | cohortForm = cohortForm } ! []
-
-        CohortFormSetStartDate str ->
-            let
-                newDate =
-                    dateFromString str
-
-                cohortForm =
-                    model.cohortForm
-                        |> Maybe.map
-                            (\form ->
-                                { form | startDate = newDate }
-                            )
-            in
-                { model | cohortForm = cohortForm } ! []
-
-        CohortFormSubmit ->
-            let
-                cmd =
-                    model.cohortForm
-                        |> Maybe.unwrap
-                            Cmd.none
-                            (\form ->
-                                Data.mutationNewCohort form
-                                    |> Gr.sendMutation "/graph?query="
-                                    |> Task.attempt CbCreateCohort
-                            )
-            in
-                model ! [ cmd ]
-
         SelectCampus campusId ->
             let
                 selectedCampus =
@@ -225,97 +140,3 @@ update msg model =
                         id
             in
                 { model | selectedCohort = selectedCohort } ! []
-
-        StudentFormCancel ->
-            { model | studentForm = Nothing } ! []
-
-        StudentFormEnable ->
-            { model | studentForm = Just emptyStudentForm } ! []
-
-        StudentFormSetFirstName str ->
-            let
-                newModel =
-                    model.studentForm
-                        |> Maybe.unwrap
-                            model
-                            (\form ->
-                                { model
-                                    | studentForm =
-                                        Just { form | firstName = str }
-                                }
-                            )
-            in
-                newModel ! []
-
-        StudentFormSetLastName str ->
-            let
-                newModel =
-                    model.studentForm
-                        |> Maybe.unwrap
-                            model
-                            (\form ->
-                                { model
-                                    | studentForm =
-                                        Just { form | lastName = str }
-                                }
-                            )
-            in
-                newModel ! []
-
-        StudentFormSetCohort str ->
-            let
-                newModel =
-                    model.studentForm
-                        |> Maybe.unwrap
-                            model
-                            (\form ->
-                                { model
-                                    | studentForm =
-                                        Just { form | cohortId = str }
-                                }
-                            )
-            in
-                newModel ! []
-
-        StudentFormSetGithub str ->
-            let
-                newModel =
-                    model.studentForm
-                        |> Maybe.unwrap
-                            model
-                            (\form ->
-                                { model
-                                    | studentForm =
-                                        Just { form | github = str }
-                                }
-                            )
-            in
-                newModel ! []
-
-        StudentFormSubmit ->
-            let
-                cmd =
-                    model.studentForm
-                        |> Maybe.unwrap
-                            Cmd.none
-                            (\form ->
-                                Data.mutationNewStudent form
-                                    |> Gr.sendMutation "/graph?query="
-                                    |> Task.attempt CbCreateStudent
-                            )
-            in
-                model ! [ cmd ]
-
-
-
--- HELPERS
-
-
-dictById : List { x | id : String } -> Dict String { x | id : String }
-dictById =
-    List.map (\x -> ( x.id, x )) >> Dict.fromList
-
-
-dateFromString : String -> Date.Date
-dateFromString =
-    Date.fromString >> Result.withDefault (Date.fromTime 1483228800000)
