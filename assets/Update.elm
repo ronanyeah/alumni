@@ -3,7 +3,7 @@ module Update exposing (update)
 import Animation exposing (deg)
 import Dict
 import Fixtures exposing (frontInit, backInit)
-import Helpers exposing (log, dictById)
+import Helpers exposing (log)
 import Model exposing (Model, Msg(..))
 import Time
 
@@ -14,7 +14,7 @@ update msg model =
         Flip k ->
             let
                 ( front, back ) =
-                    model.cohortHover
+                    model.cohortAnims
                         |> Dict.get k
                         |> Maybe.withDefault ( frontInit, backInit )
 
@@ -47,8 +47,8 @@ update msg model =
                         back
             in
                 ( { model
-                    | cohortHover =
-                        model.cohortHover
+                    | cohortAnims =
+                        model.cohortAnims
                             |> Dict.insert k ( frontAnim, backAnim )
                   }
                 , Cmd.none
@@ -57,7 +57,7 @@ update msg model =
         FlipBack k ->
             let
                 ( front, back ) =
-                    model.cohortHover
+                    model.cohortAnims
                         |> Dict.get k
                         |> Maybe.withDefault ( frontInit, backInit )
 
@@ -90,8 +90,8 @@ update msg model =
                         back
             in
                 ( { model
-                    | cohortHover =
-                        model.cohortHover
+                    | cohortAnims =
+                        model.cohortAnims
                             |> Dict.insert k ( frontAnim, backAnim )
                   }
                 , Cmd.none
@@ -99,22 +99,20 @@ update msg model =
 
         Animate animMsg ->
             { model
-                | cohortHover =
-                    Dict.map
-                        (\_ ( front, back ) ->
-                            ( Animation.update animMsg front, Animation.update animMsg back )
-                        )
-                        model.cohortHover
+                | cohortAnims =
+                    model.cohortAnims
+                        |> Dict.map
+                            (\_ ( front, back ) ->
+                                ( Animation.update animMsg front, Animation.update animMsg back )
+                            )
             }
                 ! []
 
-        CbAllData res ->
+        CbCampuses res ->
             case res of
-                Ok { campuses, cohorts, students } ->
+                Ok { allCampuses } ->
                     { model
-                        | campuses = dictById campuses
-                        , cohorts = dictById cohorts
-                        , students = dictById students
+                        | campuses = allCampuses
                     }
                         ! []
 

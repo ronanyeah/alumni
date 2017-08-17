@@ -1,4 +1,4 @@
-module Model exposing (Campus, Cohort, Student, AllData, Model, Msg(..))
+module Model exposing (Campus, Cohort, CohortAnims, Student, Campuses, Model, Msg(..))
 
 import Animation
 import Date
@@ -7,41 +7,41 @@ import GraphQL.Client.Http as Gr
 
 
 type alias Model =
-    { campuses : Dict String Campus
-    , cohorts : Dict String Cohort
-    , students : Dict String Student
+    { campuses : List Campus
     , selectedCampus : String
     , selectedCohort : String
-    , cohortHover : Dict String ( Animation.State, Animation.State )
+    , cohortAnims : CohortAnims
     }
+
+
+type alias CohortAnims =
+    Dict String ( Animation.State, Animation.State )
 
 
 type alias Campus =
     { id : String
     , name : String
+    , cohorts : List Cohort
     }
 
 
 type alias Cohort =
     { id : String
-    , campusId : String
     , startDate : Date.Date
     , endDate : Date.Date
+    , students : List Student
     }
 
 
 type alias Student =
     { id : String
-    , cohortId : String
     , firstName : String
     , github : String
     }
 
 
-type alias AllData =
-    { campuses : List Campus
-    , cohorts : List Cohort
-    , students : List Student
+type alias Campuses =
+    { allCampuses : List Campus
     }
 
 
@@ -49,6 +49,6 @@ type Msg
     = Animate Animation.Msg
     | Flip String
     | FlipBack String
-    | CbAllData (Result Gr.Error AllData)
+    | CbCampuses (Result Gr.Error Campuses)
     | SelectCampus String
     | SelectCohort String

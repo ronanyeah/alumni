@@ -7,12 +7,10 @@ import Model exposing (Model)
 
 emptyModel : Model
 emptyModel =
-    { campuses = Dict.empty
-    , cohorts = Dict.empty
-    , students = Dict.empty
+    { campuses = []
     , selectedCampus = ""
     , selectedCohort = ""
-    , cohortHover = Dict.empty
+    , cohortAnims = Dict.empty
     }
 
 

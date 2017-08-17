@@ -8,15 +8,11 @@
     ],
     "exposed-modules": [],
     "dependencies": {
-        "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",
-        "elm-community/json-extra": "2.3.0 <= v < 3.0.0",
         "elm-community/list-extra": "6.1.0 <= v < 7.0.0",
-        "elm-community/maybe-extra": "4.0.0 <= v < 5.0.0",
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
         "elm-lang/html": "2.0.0 <= v < 3.0.0",
         "elm-lang/http": "1.0.0 <= v < 2.0.0",
         "jamesmacaulay/elm-graphql": "1.4.0 <= v < 2.0.0",
-        "justinmimbs/elm-date-extra": "2.0.3 <= v < 3.0.0",
         "mdgriffith/elm-style-animation": "3.5.5 <= v < 4.0.0",
         "mdgriffith/style-elements": "3.3.0 <= v < 4.0.0"
     },

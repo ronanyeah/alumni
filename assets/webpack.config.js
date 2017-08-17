@@ -1,3 +1,6 @@
+require('dotenv').config()
+
+const webpack = require('webpack');
 const { resolve } = require('path');
 
 const outputPath = resolve('../priv/static');
@@ -8,6 +11,11 @@ module.exports = {
     path: outputPath,
     filename: 'bundle.js'
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      GRAPHQL_ENDPOINT: JSON.stringify(process.env.GRAPHCOOL || '/graph?query=')
+    })
+  ],
   module: {
     rules: [{
       test: /\.elm$/,

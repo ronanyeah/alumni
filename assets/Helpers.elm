@@ -1,13 +1,6 @@
 module Helpers exposing (..)
 
 import Date exposing (Date)
-import Date.Extra
-import Dict exposing (Dict)
-
-
-formatDate : Date -> String
-formatDate =
-    Date.Extra.toFormattedString "yyyy-MM-dd"
 
 
 log : String -> a -> Cmd msg
@@ -25,11 +18,15 @@ dateParse =
         >> Result.withDefault (Date.fromTime 0)
 
 
-dictById : List { x | id : String } -> Dict String { x | id : String }
-dictById =
-    List.map (\x -> ( x.id, x )) >> Dict.fromList
+sortByStartDate : List { a | startDate : Date } -> List { a | startDate : Date }
+sortByStartDate =
+    List.sortBy (.startDate >> Date.toTime)
 
 
-dateFromString : String -> Date.Date
-dateFromString =
-    Date.fromString >> Result.withDefault (Date.fromTime 1483228800000)
+cohortText : Date.Date -> Date.Date -> String
+cohortText start end =
+    let
+        render date =
+            (date |> Date.month |> toString) ++ " " ++ (date |> Date.year |> toString)
+    in
+        render start ++ " to " ++ render end

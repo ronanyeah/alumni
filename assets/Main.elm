@@ -4,17 +4,16 @@ import Animation
 import Data
 import Dict
 import Fixtures
-import GraphQL.Client.Http as Gr
 import Html
 import Task
-import Model exposing (Model, Msg(..))
+import Model exposing (Model, Msg(Animate, CbCampuses))
 import Update exposing (update)
 import View exposing (view)
 
 
-main : Program Never Model Msg
+main : Program String Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , subscriptions = subscriptions
         , update = update
@@ -22,12 +21,10 @@ main =
         }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : String -> ( Model, Cmd Msg )
+init url =
     Fixtures.emptyModel
-        ! [ Data.queryAllData
-                |> Gr.sendQuery "/graph?query="
-                |> Task.attempt CbAllData
+        ! [ Task.attempt CbCampuses (Data.fetch url)
           ]
 
 
@@ -35,7 +32,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     let
         cohortHovers =
-            Dict.values model.cohortHover
+            Dict.values model.cohortAnims
                 |> List.foldl (\( a, b ) acc -> acc ++ [ a, b ]) []
     in
         Animation.subscription Animate cohortHovers

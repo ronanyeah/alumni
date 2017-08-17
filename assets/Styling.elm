@@ -19,6 +19,7 @@ type Styles
     | HeaderText
     | Image
     | None
+    | Num
     | Red
     | StudentImg
     | Words
@@ -45,6 +46,7 @@ styling =
         , style Header []
         , style Image []
         , style None []
+        , style Num [ Font.size 80 ]
         , style Red [ facFont, Color.background red, Style.cursor "crosshair" ]
         , style StudentImg [ Border.rounded 25 ]
         , style Words
