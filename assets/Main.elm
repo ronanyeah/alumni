@@ -11,7 +11,7 @@ import Update exposing (update)
 import View exposing (view)
 
 
-main : Program String Model Msg
+main : Program ( String, String, String ) Model Msg
 main =
     Html.programWithFlags
         { init = init
@@ -21,11 +21,15 @@ main =
         }
 
 
-init : String -> ( Model, Cmd Msg )
-init url =
-    Fixtures.emptyModel
-        ! [ Task.attempt CbCampuses (Data.fetch url)
-          ]
+init : ( String, String, String ) -> ( Model, Cmd Msg )
+init ( url, githubId, githubSecret ) =
+    let
+        model =
+            Fixtures.emptyModel
+    in
+        { model | githubAuth = ( githubId, githubSecret ) }
+            ! [ Task.attempt CbCampuses (Data.fetch url)
+              ]
 
 
 subscriptions : Model -> Sub Msg

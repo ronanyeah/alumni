@@ -50,4 +50,4 @@ student =
     G.object Student
         |> G.with (G.field "id" [] G.string)
         |> G.with (G.field "firstName" [] G.string)
-        |> G.with (G.field "github" [] G.string)
+        |> G.with (G.field "github" [] <| G.nullable G.string)

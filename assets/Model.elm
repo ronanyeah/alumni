@@ -1,9 +1,16 @@
-module Model exposing (Campus, Cohort, CohortAnims, Student, Campuses, Model, Msg(..))
+module Model exposing (Campus, Cohort, CohortAnims, GithubImage(..), Student, Campuses, Model, Msg(..))
 
 import Animation
 import Date
 import Dict exposing (Dict)
+import Http
 import GraphQL.Client.Http as Gr
+
+
+type GithubImage
+    = Loading
+    | Failed
+    | GithubImage String
 
 
 type alias Model =
@@ -11,6 +18,8 @@ type alias Model =
     , selectedCampus : String
     , selectedCohort : String
     , cohortAnims : CohortAnims
+    , githubImages : Dict String GithubImage
+    , githubAuth : ( String, String )
     }
 
 
@@ -36,7 +45,7 @@ type alias Cohort =
 type alias Student =
     { id : String
     , firstName : String
-    , github : String
+    , github : Maybe String
     }
 
 
@@ -47,8 +56,7 @@ type alias Campuses =
 
 type Msg
     = Animate Animation.Msg
-    | Flip String
-    | FlipBack String
+    | CbGithubImage String (Result Http.Error String)
     | CbCampuses (Result Gr.Error Campuses)
     | SelectCampus String
     | SelectCohort String

@@ -29,4 +29,4 @@ cohortText start end =
         render date =
             (date |> Date.month |> toString) ++ " " ++ (date |> Date.year |> toString)
     in
-        render start ++ " to " ++ render end
+        render start ++ " / " ++ render end

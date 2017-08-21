@@ -11,6 +11,8 @@ emptyModel =
     , selectedCampus = ""
     , selectedCohort = ""
     , cohortAnims = Dict.empty
+    , githubImages = Dict.empty
+    , githubAuth = ( "", "" )
     }
 
 

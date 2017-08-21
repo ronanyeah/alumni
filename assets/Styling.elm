@@ -42,7 +42,7 @@ styling =
             , Color.background <| rgb 235 235 235
             , Style.cursor "pointer"
             ]
-        , style HeaderText [ Font.typeface [ "UGmed" ] ]
+        , style HeaderText [ Font.typeface [ "UGmed" ], Color.text black ]
         , style Header []
         , style Image []
         , style None []
