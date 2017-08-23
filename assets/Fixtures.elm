@@ -13,6 +13,15 @@ emptyModel =
     , cohortAnims = Dict.empty
     , githubImages = Dict.empty
     , githubAuth = ( "", "" )
+    , device =
+        { width = 0
+        , height = 0
+        , phone = False
+        , tablet = False
+        , desktop = False
+        , bigDesktop = False
+        , portrait = False
+        }
     }
 
 

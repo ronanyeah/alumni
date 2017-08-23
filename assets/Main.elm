@@ -6,9 +6,10 @@ import Dict
 import Fixtures
 import Html
 import Task
-import Model exposing (Model, Msg(Animate, CbCampuses))
+import Model exposing (Model, Msg(..))
 import Update exposing (update)
 import View exposing (view)
+import Window
 
 
 main : Program ( String, String, String ) Model Msg
@@ -29,6 +30,7 @@ init ( url, githubId, githubSecret ) =
     in
         { model | githubAuth = ( githubId, githubSecret ) }
             ! [ Task.attempt CbCampuses (Data.fetch url)
+              , Task.perform Resize Window.size
               ]
 
 
@@ -39,4 +41,7 @@ subscriptions model =
             Dict.values model.cohortAnims
                 |> List.foldl (\( a, b ) acc -> acc ++ [ a, b ]) []
     in
-        Animation.subscription Animate cohortHovers
+        Sub.batch
+            [ Animation.subscription Animate cohortHovers
+            , Window.resizes Resize
+            ]

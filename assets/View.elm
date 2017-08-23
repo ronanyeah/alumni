@@ -2,15 +2,15 @@ module View exposing (view)
 
 import Animation
 import Dict exposing (Dict)
-import List.Extra exposing (greedyGroupsOf)
 import Element exposing (Element, circle, column, empty, el, image, link, text, row, viewport, when, whenJust)
-import Element.Attributes as Attr exposing (center, height, padding, paddingXY, px, spacing, verticalCenter, width)
-import Element.Events as Events exposing (onClick)
+import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, toAttr, verticalCenter, width)
+import Element.Events exposing (onClick)
 import Fixtures exposing (frontInit, backInit)
 import Helpers exposing (cohortText, sortByStartDate)
 import Html exposing (Html)
-import Styling exposing (styling, Styles(..))
+import List.Extra exposing (greedyGroupsOf)
 import Model exposing (Model, Campus, Cohort, CohortAnims, GithubImage(..), Student, Msg(..))
+import Styling exposing (styling, Styles(..))
 
 
 view : Model -> Html Msg
@@ -25,21 +25,18 @@ view { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages } =
 
 header : Element Styles variation Msg
 header =
-    row None
-        [ paddingXY 0 15, center, verticalCenter ]
-        [ (link "https://foundersandcoders.com/" <|
-            el None [ Attr.target "_blank" ] <|
-                image "/logo.png" Image [ height (px 50) ] empty
-          )
-            |> Element.onRight [ el HeaderText [ Attr.paddingLeft 15, verticalCenter ] <| text "Alumni" ]
-            |> Element.onLeft [ el HeaderText [ Attr.paddingRight 15, verticalCenter, width <| px 160 ] <| text "Founders & Coders" ]
-        ]
+    (link "https://foundersandcoders.com/" <|
+        el None [ target "_blank", paddingXY 0 15, center, verticalCenter ] <|
+            image "/logo.png" Image [ height (px 50) ] empty
+    )
+        |> Element.onRight [ el HeaderText [ paddingLeft 15, verticalCenter ] <| text "Alumni" ]
+        |> Element.onLeft [ el HeaderText [ paddingRight 15, verticalCenter, width <| px 160 ] <| text "Founders & Coders" ]
 
 
 viewCampuses : List Campus -> String -> String -> CohortAnims -> Dict String GithubImage -> Element Styles variation Msg
 viewCampuses campuses selectedCohort selectedCampus cohortAnims githubImages =
     column None
-        [ center, Attr.width (Attr.percent 100), verticalCenter ]
+        [ center, width <| percent 100, verticalCenter ]
         (campuses
             |> List.foldl
                 (\{ id, name, cohorts } arr ->
@@ -60,12 +57,14 @@ viewCampuses campuses selectedCohort selectedCampus cohortAnims githubImages =
                                     |> flip whenJust (viewSingleCohort cohortAnims githubImages)
 
                         campus =
-                            row None
+                            el Words
                                 [ center
                                 , verticalCenter
                                 , onClick <| SelectCampus id
                                 ]
-                                [ el Words [ verticalCenter ] <| text <| String.toUpper name ]
+                            <|
+                                text <|
+                                    String.toUpper name
                     in
                         arr
                             ++ [ campus
@@ -97,24 +96,22 @@ viewCohorts cohorts cohortAnims =
                 |> greedyGroupsOf 3
                 |> List.map (row None [ spacing 5, padding 5 ])
     in
-        column None
-            [ Attr.paddingBottom 15 ]
-            [ column None [ center ] content ]
+        column None [ center, paddingBottom 15 ] content
 
 
 viewSingleCohort : CohortAnims -> Dict String GithubImage -> ( Int, Cohort ) -> Element Styles variation Msg
 viewSingleCohort cohortAnims githubImages ( i, { id, startDate, endDate, students } ) =
-    column None
-        []
-        [ let
-            anims =
-                cohortAnims
-                    |> Dict.get id
-                    |> Maybe.withDefault ( frontInit, backInit )
-          in
-            cohortCircle anims (cohortText startDate endDate) i id
-        , viewStudents students githubImages
-        ]
+    let
+        anims =
+            cohortAnims
+                |> Dict.get id
+                |> Maybe.withDefault ( frontInit, backInit )
+    in
+        column None
+            []
+            [ cohortCircle anims (cohortText startDate endDate) i id
+            , viewStudents students githubImages
+            ]
 
 
 viewStudents : List Student -> Dict String GithubImage -> Element Styles variation Msg
@@ -156,7 +153,7 @@ viewStudents students githubImages =
                                 (\username ->
                                     link ("https://github.com/" ++ username) <|
                                         el None
-                                            [ Attr.target "_blank"
+                                            [ target "_blank"
                                             , padding 3
                                             ]
                                         <|
@@ -203,5 +200,5 @@ renderAnim : Animation.State -> List (Element.Attribute variation Msg) -> List (
 renderAnim animStyle otherAttrs =
     animStyle
         |> Animation.render
-        |> List.map Attr.toAttr
+        |> List.map toAttr
         |> (++) otherAttrs

@@ -2,6 +2,7 @@ module Update exposing (update)
 
 import Animation exposing (deg)
 import Dict
+import Element
 import Fixtures exposing (frontInit, backInit)
 import Json.Decode as Decode
 import Helpers exposing (log)
@@ -44,6 +45,9 @@ update msg model =
                     { model | githubImages = Dict.insert username Failed model.githubImages }
                         ! [ log "github err" err ]
 
+        Resize size ->
+            { model | device = Element.classifyDevice size } ! []
+
         SelectCampus campusId ->
             let
                 selectedCampus =
@@ -54,10 +58,10 @@ update msg model =
             in
                 { model | selectedCampus = selectedCampus, selectedCohort = "", cohortAnims = Dict.empty } ! []
 
-        SelectCohort id ->
+        SelectCohort cohortId ->
             let
                 ( selectedCohort, frontAnim, backAnim ) =
-                    if id == model.selectedCohort then
+                    if cohortId == model.selectedCohort then
                         ( ""
                         , Animation.interrupt
                             [ Animation.toWith
@@ -85,7 +89,7 @@ update msg model =
                             back
                         )
                     else
-                        ( id
+                        ( cohortId
                         , Animation.interrupt
                             [ Animation.toWith
                                 (Animation.easing
@@ -114,7 +118,7 @@ update msg model =
 
                 ( front, back ) =
                     model.cohortAnims
-                        |> Dict.get id
+                        |> Dict.get cohortId
                         |> Maybe.withDefault ( frontInit, backInit )
 
                 githubUsernames =
@@ -175,6 +179,6 @@ update msg model =
                             model.githubImages
                     , cohortAnims =
                         model.cohortAnims
-                            |> Dict.insert id ( frontAnim, backAnim )
+                            |> Dict.insert cohortId ( frontAnim, backAnim )
                 }
                     ! requests

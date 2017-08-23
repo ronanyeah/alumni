@@ -3,8 +3,10 @@ module Model exposing (Campus, Cohort, CohortAnims, GithubImage(..), Student, Ca
 import Animation
 import Date
 import Dict exposing (Dict)
+import Element
 import Http
 import GraphQL.Client.Http as Gr
+import Window
 
 
 type GithubImage
@@ -20,6 +22,7 @@ type alias Model =
     , cohortAnims : CohortAnims
     , githubImages : Dict String GithubImage
     , githubAuth : ( String, String )
+    , device : Element.Device
     }
 
 
@@ -58,5 +61,6 @@ type Msg
     = Animate Animation.Msg
     | CbGithubImage String (Result Http.Error String)
     | CbCampuses (Result Gr.Error Campuses)
+    | Resize Window.Size
     | SelectCampus String
     | SelectCohort String
