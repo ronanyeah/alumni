@@ -13,7 +13,7 @@ for _ <- 1..3 do
     name: Faker.Address.city
   })
 
-  for _ <- 1..3 do
+  for _ <- 1..5 do
     start_date = Faker.Date.backward(1000)
 
     end_date =
