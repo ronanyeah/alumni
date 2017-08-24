@@ -2,96 +2,127 @@ module View exposing (view)
 
 import Animation
 import Dict exposing (Dict)
-import Element exposing (Element, circle, column, empty, el, image, link, text, row, viewport, when, whenJust)
-import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, toAttr, verticalCenter, width)
+import Element exposing (Device, Element, circle, column, empty, el, image, link, text, row, viewport, when, whenJust)
+import Element.Attributes exposing (center, height, maxWidth, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, toAttr, vary, verticalCenter, width)
 import Element.Events exposing (onClick)
 import Fixtures exposing (frontInit, backInit)
 import Helpers exposing (cohortText, sortByStartDate)
 import Html exposing (Html)
 import List.Extra exposing (greedyGroupsOf)
 import Model exposing (Model, Campus, Cohort, CohortAnims, GithubImage(..), Student, Msg(..))
-import Styling exposing (styling, Styles(..))
+import Styling exposing (styling, Styles(..), Variations(..))
 
 
 view : Model -> Html Msg
-view { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages } =
+view model =
     viewport styling <|
         column None
             []
-            [ header
-            , viewCampuses campuses selectedCohort selectedCampus cohortAnims githubImages
+            [ header model.device
+            , viewCampuses model
             ]
 
 
-header : Element Styles variation Msg
-header =
-    (link "https://foundersandcoders.com/" <|
-        el None [ target "_blank", paddingXY 0 15, center, verticalCenter ] <|
-            image "/logo.png" Image [ height (px 50) ] empty
-    )
-        |> Element.onRight [ el HeaderText [ paddingLeft 15, verticalCenter ] <| text "Alumni" ]
-        |> Element.onLeft [ el HeaderText [ paddingRight 15, verticalCenter, width <| px 160 ] <| text "Founders & Coders" ]
+header : Device -> Element Styles variation Msg
+header { phone } =
+    let
+        logo =
+            link "https://foundersandcoders.com/" <|
+                el None [ target "_blank", paddingXY 0 15, center, verticalCenter ] <|
+                    image "/logo.png" Image [ height (px 50) ] empty
+    in
+        if phone then
+            logo
+        else
+            logo
+                |> Element.onRight
+                    [ el HeaderText
+                        [ paddingLeft 15
+                        , verticalCenter
+                        ]
+                      <|
+                        text "Alumni"
+                    ]
+                |> Element.onLeft
+                    [ el HeaderText
+                        [ paddingRight 15
+                        , verticalCenter
+                        , width <| px 160
+                        ]
+                      <|
+                        text "Founders & Coders"
+                    ]
 
 
-viewCampuses : List Campus -> String -> String -> CohortAnims -> Dict String GithubImage -> Element Styles variation Msg
-viewCampuses campuses selectedCohort selectedCampus cohortAnims githubImages =
+viewCampuses : Model -> Element Styles Variations Msg
+viewCampuses { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages, device } =
     column None
         [ center, width <| percent 100, verticalCenter ]
         (campuses
             |> List.foldl
-                (\{ id, name, cohorts } arr ->
+                (\campus arr ->
                     let
-                        numberedCohorts : List ( Int, Cohort )
-                        numberedCohorts =
-                            cohorts
-                                |> sortByStartDate
-                                |> List.indexedMap (,)
-
-                        dropdown =
-                            if selectedCohort == "" then
-                                viewCohorts numberedCohorts cohortAnims
-                            else
-                                numberedCohorts
-                                    |> List.filter (Tuple.second >> (.id >> (==) selectedCohort))
-                                    |> List.head
-                                    |> flip whenJust (viewSingleCohort cohortAnims githubImages)
-
-                        campus =
-                            el Words
+                        viewCampus =
+                            el CampusText
                                 [ center
                                 , verticalCenter
-                                , onClick <| SelectCampus id
+                                , onClick <| SelectCampus campus
+                                , vary Mobile device.phone
                                 ]
                             <|
                                 text <|
-                                    String.toUpper name
+                                    String.toUpper campus.name
+
+                        default =
+                            arr ++ [ viewCampus ]
                     in
-                        arr
-                            ++ [ campus
-                               , when (selectedCampus == id) dropdown
-                               ]
+                        case ( selectedCampus, selectedCohort ) of
+                            ( Just c, Just cohort ) ->
+                                if c == campus then
+                                    arr
+                                        ++ [ viewCampus
+                                           , viewSingleCohort device cohortAnims githubImages cohort
+                                           ]
+                                else
+                                    default
+
+                            ( Just c, Nothing ) ->
+                                if c == campus then
+                                    let
+                                        numberedCohorts : List ( Int, Cohort )
+                                        numberedCohorts =
+                                            campus.cohorts
+                                                |> sortByStartDate
+                                                |> List.indexedMap (,)
+                                    in
+                                        arr ++ [ viewCampus, viewCohorts device cohortAnims numberedCohorts ]
+                                else
+                                    default
+
+                            ( Nothing, Nothing ) ->
+                                default
+
+                            ( Nothing, Just _ ) ->
+                                default
                 )
                 []
         )
 
 
-viewCohorts : List ( Int, Cohort ) -> CohortAnims -> Element Styles variation Msg
-viewCohorts cohorts cohortAnims =
+viewCohorts : Device -> CohortAnims -> List ( Int, Cohort ) -> Element Styles variation Msg
+viewCohorts device cohortAnims cohorts =
     let
         content =
             cohorts
                 |> List.map
-                    (\( i, { id, startDate, endDate } ) ->
+                    (\( num, cohort ) ->
                         let
                             anims =
                                 cohortAnims
-                                    |> Dict.get id
+                                    |> Dict.get cohort.id
                                     |> Maybe.withDefault ( frontInit, backInit )
-
-                            datesText =
-                                cohortText startDate endDate
                         in
-                            cohortCircle anims datesText i id
+                            cohortCircle device anims ( num, cohort )
                     )
                 |> greedyGroupsOf 3
                 |> List.map (row None [ spacing 5, padding 5 ])
@@ -99,25 +130,25 @@ viewCohorts cohorts cohortAnims =
         column None [ center, paddingBottom 15 ] content
 
 
-viewSingleCohort : CohortAnims -> Dict String GithubImage -> ( Int, Cohort ) -> Element Styles variation Msg
-viewSingleCohort cohortAnims githubImages ( i, { id, startDate, endDate, students } ) =
+viewSingleCohort : Device -> CohortAnims -> Dict String GithubImage -> ( Int, Cohort ) -> Element Styles variation Msg
+viewSingleCohort device cohortAnims githubImages ( i, cohort ) =
     let
         anims =
             cohortAnims
-                |> Dict.get id
+                |> Dict.get cohort.id
                 |> Maybe.withDefault ( frontInit, backInit )
     in
         column None
-            []
-            [ cohortCircle anims (cohortText startDate endDate) i id
-            , viewStudents students githubImages
+            [ padding 5 ]
+            [ cohortCircle device anims ( i, cohort )
+            , viewStudents device cohort.students githubImages
             ]
 
 
-viewStudents : List Student -> Dict String GithubImage -> Element Styles variation Msg
-viewStudents students githubImages =
+viewStudents : Device -> List Student -> Dict String GithubImage -> Element Styles variation Msg
+viewStudents device students githubImages =
     column None
-        [ center, padding 20 ]
+        [ center ]
         (students
             |> List.map
                 (\{ firstName, github } ->
@@ -166,34 +197,34 @@ viewStudents students githubImages =
         )
 
 
-cohortCircle : ( Animation.State, Animation.State ) -> String -> Int -> String -> Element Styles v Msg
-cohortCircle ( frontAnim, backAnim ) txt num id =
+cohortCircle : Device -> ( Animation.State, Animation.State ) -> ( Int, Cohort ) -> Element Styles v Msg
+cohortCircle device ( frontAnim, backAnim ) ( num, cohort ) =
     let
-        front =
-            circle 100
-                CampusCircle
-                (renderAnim frontAnim [ center, height <| px 200, width <| px 200, verticalCenter ])
-            <|
-                el Num [ center, verticalCenter ] <|
-                    text <|
-                        toString num
+        datesText =
+            cohortText cohort.startDate cohort.endDate
 
-        back =
+        size =
+            if device.phone then
+                130
+            else
+                200
+
+        side anim style txt =
             circle 100
                 CampusCircle
-                (renderAnim backAnim [ center, height <| px 200, width <| px 200, verticalCenter ])
+                (renderAnim anim [ center, height <| px size, width <| px size, verticalCenter ])
             <|
-                el None [ center, verticalCenter ] <|
+                el style [ center, verticalCenter ] <|
                     text txt
     in
         el None
-            [ onClick <| SelectCohort id
-            , height <| px 200
-            , width <| px 200
+            [ onClick <| SelectCohort ( num, cohort )
+            , height <| px size
+            , width <| px size
             , center
             ]
             empty
-            |> Element.within [ front, back ]
+            |> Element.within [ side frontAnim Num <| toString num, side backAnim None datesText ]
 
 
 renderAnim : Animation.State -> List (Element.Attribute variation Msg) -> List (Element.Attribute variation Msg)

@@ -17,8 +17,8 @@ type GithubImage
 
 type alias Model =
     { campuses : List Campus
-    , selectedCampus : String
-    , selectedCohort : String
+    , selectedCampus : Maybe Campus
+    , selectedCohort : Maybe ( Int, Cohort )
     , cohortAnims : CohortAnims
     , githubImages : Dict String GithubImage
     , githubAuth : ( String, String )
@@ -62,5 +62,5 @@ type Msg
     | CbGithubImage String (Result Http.Error String)
     | CbCampuses (Result Gr.Error Campuses)
     | Resize Window.Size
-    | SelectCampus String
-    | SelectCohort String
+    | SelectCampus Campus
+    | SelectCohort ( Int, Cohort )

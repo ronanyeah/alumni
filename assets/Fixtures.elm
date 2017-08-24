@@ -8,8 +8,8 @@ import Model exposing (Model)
 emptyModel : Model
 emptyModel =
     { campuses = []
-    , selectedCampus = ""
-    , selectedCohort = ""
+    , selectedCampus = Nothing
+    , selectedCohort = Nothing
     , cohortAnims = Dict.empty
     , githubImages = Dict.empty
     , githubAuth = ( "", "" )

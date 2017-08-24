@@ -48,21 +48,21 @@ update msg model =
         Resize size ->
             { model | device = Element.classifyDevice size } ! []
 
-        SelectCampus campusId ->
+        SelectCampus campus ->
             let
                 selectedCampus =
-                    if campusId == model.selectedCampus then
-                        ""
+                    if Just campus == model.selectedCampus then
+                        Nothing
                     else
-                        campusId
+                        Just campus
             in
-                { model | selectedCampus = selectedCampus, selectedCohort = "", cohortAnims = Dict.empty } ! []
+                { model | selectedCampus = selectedCampus, selectedCohort = Nothing, cohortAnims = Dict.empty } ! []
 
-        SelectCohort cohortId ->
+        SelectCohort ( num, cohort ) ->
             let
                 ( selectedCohort, frontAnim, backAnim ) =
-                    if cohortId == model.selectedCohort then
-                        ( ""
+                    if Just ( num, cohort ) == model.selectedCohort then
+                        ( Nothing
                         , Animation.interrupt
                             [ Animation.toWith
                                 (Animation.easing
@@ -89,7 +89,7 @@ update msg model =
                             back
                         )
                     else
-                        ( cohortId
+                        ( Just ( num, cohort )
                         , Animation.interrupt
                             [ Animation.toWith
                                 (Animation.easing
@@ -118,20 +118,11 @@ update msg model =
 
                 ( front, back ) =
                     model.cohortAnims
-                        |> Dict.get cohortId
+                        |> Dict.get cohort.id
                         |> Maybe.withDefault ( frontInit, backInit )
 
                 githubUsernames =
-                    model.campuses
-                        |> List.concatMap .cohorts
-                        |> List.foldl
-                            (\{ id, students } acc ->
-                                if id == selectedCohort then
-                                    List.filterMap .github students
-                                else
-                                    acc
-                            )
-                            []
+                    List.filterMap .github cohort.students
 
                 githubAuth =
                     let
@@ -179,6 +170,6 @@ update msg model =
                             model.githubImages
                     , cohortAnims =
                         model.cohortAnims
-                            |> Dict.insert cohortId ( frontAnim, backAnim )
+                            |> Dict.insert cohort.id ( frontAnim, backAnim )
                 }
                     ! requests
