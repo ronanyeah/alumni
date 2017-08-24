@@ -1,4 +1,4 @@
-module Model exposing (Campus, Cohort, CohortAnims, GithubImage(..), Student, Campuses, Model, Msg(..))
+module Model exposing (..)
 
 import Animation
 import Date
@@ -15,19 +15,26 @@ type GithubImage
     | GithubImage String
 
 
+type alias CohortAnim =
+    ( Animation.State, Animation.State )
+
+
 type alias Model =
     { campuses : List Campus
     , selectedCampus : Maybe Campus
-    , selectedCohort : Maybe ( Int, Cohort )
-    , cohortAnims : CohortAnims
+    , selectedCohort : Maybe Cohort
+    , cohortAnims : Dict String CohortAnim
     , githubImages : Dict String GithubImage
     , githubAuth : ( String, String )
     , device : Element.Device
     }
 
 
-type alias CohortAnims =
-    Dict String ( Animation.State, Animation.State )
+type alias CampusWithoutNum =
+    { id : String
+    , name : String
+    , cohorts : List CohortWithoutNum
+    }
 
 
 type alias Campus =
@@ -37,11 +44,20 @@ type alias Campus =
     }
 
 
+type alias CohortWithoutNum =
+    { id : String
+    , startDate : Date.Date
+    , endDate : Date.Date
+    , students : List Student
+    }
+
+
 type alias Cohort =
     { id : String
     , startDate : Date.Date
     , endDate : Date.Date
     , students : List Student
+    , num : Int
     }
 
 
@@ -52,15 +68,15 @@ type alias Student =
     }
 
 
-type alias Campuses =
-    { allCampuses : List Campus
+type alias AllCampuses =
+    { allCampuses : List CampusWithoutNum
     }
 
 
 type Msg
     = Animate Animation.Msg
     | CbGithubImage String (Result Http.Error String)
-    | CbCampuses (Result Gr.Error Campuses)
+    | CbCampuses (Result Gr.Error AllCampuses)
     | Resize Window.Size
     | SelectCampus Campus
-    | SelectCohort ( Int, Cohort )
+    | SelectCohort Cohort

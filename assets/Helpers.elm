@@ -1,6 +1,9 @@
 module Helpers exposing (..)
 
 import Date exposing (Date)
+import Dict exposing (Dict)
+import Fixtures exposing (frontInit, backInit)
+import Model exposing (Cohort, CohortAnim, GithubImage(..), Msg(..))
 
 
 log : String -> a -> Cmd msg
@@ -30,3 +33,9 @@ cohortText start end =
             (date |> Date.month |> toString) ++ " " ++ (date |> Date.year |> toString)
     in
         render start ++ " / " ++ render end
+
+
+getCohortAnim : Cohort -> Dict String CohortAnim -> CohortAnim
+getCohortAnim { id } =
+    Dict.get id
+        >> Maybe.withDefault ( frontInit, backInit )

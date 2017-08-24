@@ -3,13 +3,12 @@ module View exposing (view)
 import Animation
 import Dict exposing (Dict)
 import Element exposing (Device, Element, circle, column, empty, el, image, link, text, row, viewport, when, whenJust)
-import Element.Attributes exposing (center, height, maxWidth, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, toAttr, vary, verticalCenter, width)
+import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, toAttr, vary, verticalCenter, width)
 import Element.Events exposing (onClick)
-import Fixtures exposing (frontInit, backInit)
-import Helpers exposing (cohortText, sortByStartDate)
+import Helpers exposing (cohortText, getCohortAnim)
 import Html exposing (Html)
 import List.Extra exposing (greedyGroupsOf)
-import Model exposing (Model, Campus, Cohort, CohortAnims, GithubImage(..), Student, Msg(..))
+import Model exposing (Model, Campus, Cohort, CohortAnim, GithubImage(..), Student, Msg(..))
 import Styling exposing (styling, Styles(..), Variations(..))
 
 
@@ -77,25 +76,35 @@ viewCampuses { campuses, selectedCampus, selectedCohort, cohortAnims, githubImag
                             arr ++ [ viewCampus ]
                     in
                         case ( selectedCampus, selectedCohort ) of
-                            ( Just c, Just cohort ) ->
+                            ( Just c, Just numCohort ) ->
                                 if c == campus then
-                                    arr
-                                        ++ [ viewCampus
-                                           , viewSingleCohort device cohortAnims githubImages cohort
-                                           ]
+                                    let
+                                        anim =
+                                            getCohortAnim numCohort cohortAnims
+                                    in
+                                        arr
+                                            ++ [ viewCampus
+                                               , viewSingleCohort device anim githubImages numCohort
+                                               ]
                                 else
                                     default
 
                             ( Just c, Nothing ) ->
                                 if c == campus then
                                     let
-                                        numberedCohorts : List ( Int, Cohort )
-                                        numberedCohorts =
+                                        cohortsWithAnimations : List ( CohortAnim, Cohort )
+                                        cohortsWithAnimations =
                                             campus.cohorts
-                                                |> sortByStartDate
-                                                |> List.indexedMap (,)
+                                                |> List.map
+                                                    (\cohort ->
+                                                        let
+                                                            anim =
+                                                                getCohortAnim cohort cohortAnims
+                                                        in
+                                                            ( anim, cohort )
+                                                    )
                                     in
-                                        arr ++ [ viewCampus, viewCohorts device cohortAnims numberedCohorts ]
+                                        arr ++ [ viewCampus, viewCohorts device cohortsWithAnimations ]
                                 else
                                     default
 
@@ -109,40 +118,25 @@ viewCampuses { campuses, selectedCampus, selectedCohort, cohortAnims, githubImag
         )
 
 
-viewCohorts : Device -> CohortAnims -> List ( Int, Cohort ) -> Element Styles variation Msg
-viewCohorts device cohortAnims cohorts =
+viewCohorts : Device -> List ( CohortAnim, Cohort ) -> Element Styles variation Msg
+viewCohorts device cohortsWithAnimations =
     let
         content =
-            cohorts
-                |> List.map
-                    (\( num, cohort ) ->
-                        let
-                            anims =
-                                cohortAnims
-                                    |> Dict.get cohort.id
-                                    |> Maybe.withDefault ( frontInit, backInit )
-                        in
-                            cohortCircle device anims ( num, cohort )
-                    )
+            cohortsWithAnimations
+                |> List.map (uncurry (cohortCircle device))
                 |> greedyGroupsOf 3
                 |> List.map (row None [ spacing 5, padding 5 ])
     in
         column None [ center, paddingBottom 15 ] content
 
 
-viewSingleCohort : Device -> CohortAnims -> Dict String GithubImage -> ( Int, Cohort ) -> Element Styles variation Msg
-viewSingleCohort device cohortAnims githubImages ( i, cohort ) =
-    let
-        anims =
-            cohortAnims
-                |> Dict.get cohort.id
-                |> Maybe.withDefault ( frontInit, backInit )
-    in
-        column None
-            [ padding 5 ]
-            [ cohortCircle device anims ( i, cohort )
-            , viewStudents device cohort.students githubImages
-            ]
+viewSingleCohort : Device -> CohortAnim -> Dict String GithubImage -> Cohort -> Element Styles variation Msg
+viewSingleCohort device anim githubImages cohort =
+    column None
+        [ padding 5 ]
+        [ cohortCircle device anim cohort
+        , viewStudents device cohort.students githubImages
+        ]
 
 
 viewStudents : Device -> List Student -> Dict String GithubImage -> Element Styles variation Msg
@@ -197,15 +191,15 @@ viewStudents device students githubImages =
         )
 
 
-cohortCircle : Device -> ( Animation.State, Animation.State ) -> ( Int, Cohort ) -> Element Styles v Msg
-cohortCircle device ( frontAnim, backAnim ) ( num, cohort ) =
+cohortCircle : Device -> CohortAnim -> Cohort -> Element Styles v Msg
+cohortCircle device ( frontAnim, backAnim ) cohort =
     let
         datesText =
             cohortText cohort.startDate cohort.endDate
 
         size =
             if device.phone then
-                130
+                120
             else
                 200
 
@@ -218,13 +212,13 @@ cohortCircle device ( frontAnim, backAnim ) ( num, cohort ) =
                     text txt
     in
         el None
-            [ onClick <| SelectCohort ( num, cohort )
+            [ onClick <| SelectCohort cohort
             , height <| px size
             , width <| px size
             , center
             ]
             empty
-            |> Element.within [ side frontAnim Num <| toString num, side backAnim None datesText ]
+            |> Element.within [ side frontAnim Num <| toString cohort.num, side backAnim None datesText ]
 
 
 renderAnim : Animation.State -> List (Element.Attribute variation Msg) -> List (Element.Attribute variation Msg)

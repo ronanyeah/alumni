@@ -5,7 +5,7 @@ import Dict
 import Element
 import Fixtures exposing (frontInit, backInit)
 import Json.Decode as Decode
-import Helpers exposing (log)
+import Helpers exposing (log, sortByStartDate)
 import Http
 import Model exposing (Model, Msg(..), GithubImage(..))
 import Time
@@ -28,10 +28,32 @@ update msg model =
         CbCampuses res ->
             case res of
                 Ok { allCampuses } ->
-                    { model
-                        | campuses = allCampuses
-                    }
-                        ! []
+                    let
+                        data =
+                            allCampuses
+                                |> List.map
+                                    (\campus ->
+                                        let
+                                            numberedCohorts =
+                                                campus.cohorts
+                                                    |> sortByStartDate
+                                                    |> List.indexedMap
+                                                        (\i cohort ->
+                                                            { id = cohort.id
+                                                            , startDate = cohort.startDate
+                                                            , endDate = cohort.endDate
+                                                            , students = cohort.students
+                                                            , num = i + 1
+                                                            }
+                                                        )
+                                        in
+                                            { campus | cohorts = numberedCohorts }
+                                    )
+                    in
+                        { model
+                            | campuses = data
+                        }
+                            ! []
 
                 Err err ->
                     model ! [ log "err" err ]
@@ -58,10 +80,10 @@ update msg model =
             in
                 { model | selectedCampus = selectedCampus, selectedCohort = Nothing, cohortAnims = Dict.empty } ! []
 
-        SelectCohort ( num, cohort ) ->
+        SelectCohort cohort ->
             let
                 ( selectedCohort, frontAnim, backAnim ) =
-                    if Just ( num, cohort ) == model.selectedCohort then
+                    if Just cohort == model.selectedCohort then
                         ( Nothing
                         , Animation.interrupt
                             [ Animation.toWith
@@ -89,7 +111,7 @@ update msg model =
                             back
                         )
                     else
-                        ( Just ( num, cohort )
+                        ( Just cohort
                         , Animation.interrupt
                             [ Animation.toWith
                                 (Animation.easing
