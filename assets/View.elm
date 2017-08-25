@@ -13,13 +13,52 @@ import Styling exposing (styling, Styles(..), Variations(..))
 
 
 view : Model -> Html Msg
-view model =
-    viewport styling <|
-        column None
-            []
-            [ header model.device
-            , viewCampuses model
-            ]
+view { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages, device } =
+    let
+        body =
+            case ( selectedCampus, selectedCohort ) of
+                ( Just campus, Just cohort ) ->
+                    let
+                        anim =
+                            getCohortAnim cohort cohortAnims
+                    in
+                        [ viewCampus device campus
+                        , viewSingleCohort device anim githubImages cohort
+                        ]
+
+                ( Just campus, Nothing ) ->
+                    let
+                        cohortsWithAnimations : List ( CohortAnim, Cohort )
+                        cohortsWithAnimations =
+                            campus.cohorts
+                                |> List.map
+                                    (\cohort ->
+                                        let
+                                            anim =
+                                                getCohortAnim cohort cohortAnims
+                                        in
+                                            ( anim, cohort )
+                                    )
+                    in
+                        [ viewCampus device campus, viewCohorts device cohortsWithAnimations ]
+
+                ( Nothing, Nothing ) ->
+                    [ viewCampuses device campuses ]
+
+                ( Nothing, Just _ ) ->
+                    [ viewCampuses device campuses ]
+    in
+        viewport styling <|
+            column None
+                []
+                [ header device
+                , column None
+                    [ center
+                    , width <| percent 100
+                    , verticalCenter
+                    ]
+                    body
+                ]
 
 
 header : Device -> Element Styles variation Msg
@@ -53,69 +92,24 @@ header { phone } =
                     ]
 
 
-viewCampuses : Model -> Element Styles Variations Msg
-viewCampuses { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages, device } =
-    column None
-        [ center, width <| percent 100, verticalCenter ]
-        (campuses
-            |> List.foldl
-                (\campus arr ->
-                    let
-                        viewCampus =
-                            el CampusText
-                                [ center
-                                , verticalCenter
-                                , onClick <| SelectCampus campus
-                                , vary Mobile device.phone
-                                ]
-                            <|
-                                text <|
-                                    String.toUpper campus.name
+viewCampus : Device -> Campus -> Element Styles Variations Msg
+viewCampus device campus =
+    el CampusText
+        [ center
+        , verticalCenter
+        , onClick <| SelectCampus campus
+        , vary Mobile device.phone
+        ]
+    <|
+        text <|
+            String.toUpper campus.name
 
-                        default =
-                            arr ++ [ viewCampus ]
-                    in
-                        case ( selectedCampus, selectedCohort ) of
-                            ( Just c, Just numCohort ) ->
-                                if c == campus then
-                                    let
-                                        anim =
-                                            getCohortAnim numCohort cohortAnims
-                                    in
-                                        arr
-                                            ++ [ viewCampus
-                                               , viewSingleCohort device anim githubImages numCohort
-                                               ]
-                                else
-                                    default
 
-                            ( Just c, Nothing ) ->
-                                if c == campus then
-                                    let
-                                        cohortsWithAnimations : List ( CohortAnim, Cohort )
-                                        cohortsWithAnimations =
-                                            campus.cohorts
-                                                |> List.map
-                                                    (\cohort ->
-                                                        let
-                                                            anim =
-                                                                getCohortAnim cohort cohortAnims
-                                                        in
-                                                            ( anim, cohort )
-                                                    )
-                                    in
-                                        arr ++ [ viewCampus, viewCohorts device cohortsWithAnimations ]
-                                else
-                                    default
-
-                            ( Nothing, Nothing ) ->
-                                default
-
-                            ( Nothing, Just _ ) ->
-                                default
-                )
-                []
-        )
+viewCampuses : Device -> List Campus -> Element Styles Variations Msg
+viewCampuses device =
+    List.map (viewCampus device)
+        >> column None
+            [ center, width <| percent 100, verticalCenter ]
 
 
 viewCohorts : Device -> List ( CohortAnim, Cohort ) -> Element Styles variation Msg
@@ -204,9 +198,9 @@ cohortCircle device ( frontAnim, backAnim ) cohort =
                 200
 
         side anim style txt =
-            circle 100
+            circle (size / 2)
                 CampusCircle
-                (renderAnim anim [ center, height <| px size, width <| px size, verticalCenter ])
+                (renderAnim anim [ center, verticalCenter ])
             <|
                 el style [ center, verticalCenter ] <|
                     text txt

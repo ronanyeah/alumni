@@ -1,4 +1,4 @@
-module Data exposing (fetch)
+module Api exposing (fetchData)
 
 import Helpers exposing (dateParse)
 import Model exposing (AllCampuses, CohortWithoutNum, CampusWithoutNum, Student)
@@ -7,8 +7,8 @@ import GraphQL.Request.Builder as G
 import Task exposing (Task)
 
 
-fetch : String -> Task Gr.Error AllCampuses
-fetch url =
+fetchData : String -> Task Gr.Error AllCampuses
+fetchData url =
     Gr.sendQuery url queryAllData
 
 

@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Animation
-import Data
+import Api
 import Dict
 import Fixtures
 import Html
@@ -29,7 +29,7 @@ init ( url, githubId, githubSecret ) =
             Fixtures.emptyModel
     in
         { model | githubAuth = ( githubId, githubSecret ) }
-            ! [ Task.attempt CbCampuses (Data.fetch url)
+            ! [ Task.attempt CbCampuses (Api.fetchData url)
               , Task.perform Resize Window.size
               ]
 
