@@ -2,7 +2,7 @@ module View exposing (view)
 
 import Dict exposing (Dict)
 import Element exposing (Device, Element, circle, column, empty, el, image, link, text, row, viewport, whenJust)
-import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, vary, verticalCenter, width)
+import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingTop, paddingXY, percent, px, spacing, target, vary, verticalCenter, width)
 import Element.Events exposing (onClick)
 import Helpers exposing (cohortText, getCohortAnim, renderAnim)
 import Html exposing (Html)
@@ -52,14 +52,14 @@ header { phone } =
         logo =
             link "https://foundersandcoders.com/" <|
                 el None [ target "_blank", paddingXY 0 15, center, verticalCenter ] <|
-                    image "/logo.png" Image [ height (px 50) ] empty
+                    image "/logo.png" None [ height <| px 50 ] empty
     in
         if phone then
             logo
         else
             logo
                 |> Element.onRight
-                    [ el HeaderText
+                    [ el Text
                         [ paddingLeft 15
                         , verticalCenter
                         ]
@@ -67,7 +67,7 @@ header { phone } =
                         text "Alumni"
                     ]
                 |> Element.onLeft
-                    [ el HeaderText
+                    [ el Text
                         [ paddingRight 15
                         , verticalCenter
                         , width <| px 160
@@ -122,7 +122,7 @@ viewCohorts device cohortAnims cohorts =
                         viewCohort device anim cohort (SelectCohort cohort)
                     )
                 |> greedyGroupsOf 3
-                |> List.map (row None [ spacing 5 ])
+                |> List.map (row None [ spacing 5, padding 5 ])
     in
         column None [ center, paddingBottom 15 ] content
 
@@ -130,22 +130,29 @@ viewCohorts device cohortAnims cohorts =
 viewCohort : Device -> CohortAnim -> Cohort -> Msg -> Element Styles Variations Msg
 viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
     let
-        datesText =
-            cohortText cohort.startDate cohort.endDate
-
         size =
             if device.phone then
                 120
             else
                 200
 
-        side anim style txt =
+        front =
             circle (size / 2)
                 CampusCircle
-                (renderAnim anim [ center, verticalCenter ])
+                (renderAnim frontAnim [ center, verticalCenter ])
             <|
-                el style [ center, verticalCenter ] <|
-                    text txt
+                el CohortNum [ center, verticalCenter ] <|
+                    text <|
+                        toString cohort.num
+
+        back =
+            circle (size / 2)
+                CampusCircle
+                (renderAnim backAnim [ center, verticalCenter ])
+            <|
+                el CohortDates [ vary Mobile device.phone, center, verticalCenter ] <|
+                    text <|
+                        cohortText cohort.startDate cohort.endDate
     in
         el None
             [ onClick clickMsg
@@ -156,15 +163,15 @@ viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
             ]
             empty
             |> Element.within
-                [ side frontAnim Num <| toString cohort.num
-                , side backAnim None datesText
+                [ front
+                , back
                 ]
 
 
 viewStudents : Device -> Dict String GithubImage -> List Student -> Element Styles Variations Msg
 viewStudents device githubImages students =
     column None
-        [ center ]
+        [ center, paddingTop 20 ]
         (students
             |> List.map
                 (\student ->
@@ -176,7 +183,12 @@ viewStudents device githubImages students =
                     in
                         viewStudent device githubImage student
                 )
-            |> greedyGroupsOf 4
+            |> greedyGroupsOf
+                (if device.phone then
+                    3
+                 else
+                    4
+                )
             |> List.map (row None [])
         )
 
@@ -194,24 +206,31 @@ viewStudent device githubImage { firstName, github } =
 
                 Failed ->
                     "/logo.png"
+
+        colWidth =
+            if device.phone then
+                device.width
+                    |> flip (//) 4
+                    |> toFloat
+                    |> px
+                    |> width
+            else
+                width <| px 90
     in
         column None
-            [ width <| px 100, height <| px 100, center, padding 5 ]
+            [ center, colWidth, paddingBottom 10 ]
             [ image imgSrc
                 StudentImg
                 [ width <| px 50
                 , height <| px 50
-                , padding 3
                 ]
                 empty
-            , el HeaderText [ padding 3 ] <| text firstName
+            , el Text [ padding 10 ] <| text firstName
             , whenJust github
                 (\username ->
                     link ("https://github.com/" ++ username) <|
                         el None
-                            [ target "_blank"
-                            , padding 3
-                            ]
+                            [ target "_blank" ]
                         <|
                             image "/gh.svg" None [] empty
                 )
