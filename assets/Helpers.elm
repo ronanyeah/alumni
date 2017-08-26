@@ -1,5 +1,8 @@
 module Helpers exposing (..)
 
+import Animation
+import Element
+import Element.Attributes
 import Date exposing (Date)
 import Dict exposing (Dict)
 import Fixtures exposing (frontInit, backInit)
@@ -39,3 +42,11 @@ getCohortAnim : Cohort -> Dict String CohortAnim -> CohortAnim
 getCohortAnim { id } =
     Dict.get id
         >> Maybe.withDefault ( frontInit, backInit )
+
+
+renderAnim : Animation.State -> List (Element.Attribute variation Msg) -> List (Element.Attribute variation Msg)
+renderAnim animStyle otherAttrs =
+    animStyle
+        |> Animation.render
+        |> List.map Element.Attributes.toAttr
+        |> (++) otherAttrs

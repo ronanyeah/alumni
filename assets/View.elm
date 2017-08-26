@@ -1,11 +1,10 @@
 module View exposing (view)
 
-import Animation
 import Dict exposing (Dict)
-import Element exposing (Device, Element, circle, column, empty, el, image, link, text, row, viewport, when, whenJust)
-import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, toAttr, vary, verticalCenter, width)
+import Element exposing (Device, Element, circle, column, empty, el, image, link, text, row, viewport, whenJust)
+import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingXY, percent, px, spacing, target, vary, verticalCenter, width)
 import Element.Events exposing (onClick)
-import Helpers exposing (cohortText, getCohortAnim)
+import Helpers exposing (cohortText, getCohortAnim, renderAnim)
 import Html exposing (Html)
 import List.Extra exposing (greedyGroupsOf)
 import Model exposing (Model, Campus, Cohort, CohortAnim, GithubImage(..), State(..), Student, Msg(..))
@@ -17,6 +16,14 @@ view { campuses, state, cohortAnims, githubImages, device } =
     let
         body =
             case state of
+                NothingSelected ->
+                    [ viewCampuses device campuses ]
+
+                CampusSelected campus ->
+                    [ viewCampus device campus DeselectCampus
+                    , viewCohorts device cohortAnims campus.cohorts
+                    ]
+
                 CohortSelected campus cohort ->
                     let
                         anim =
@@ -26,14 +33,6 @@ view { campuses, state, cohortAnims, githubImages, device } =
                         , viewCohort device anim cohort DeselectCohort
                         , viewStudents device githubImages cohort.students
                         ]
-
-                CampusSelected campus ->
-                    [ viewCampus device campus DeselectCampus
-                    , viewCohorts device cohortAnims campus.cohorts
-                    ]
-
-                NothingSelected ->
-                    [ viewCampuses device campuses ]
     in
         viewport styling <|
             column None
@@ -78,6 +77,16 @@ header { phone } =
                     ]
 
 
+viewCampuses : Device -> List Campus -> Element Styles Variations Msg
+viewCampuses device =
+    List.map
+        (\campus ->
+            viewCampus device campus (SelectCampus campus)
+        )
+        >> column None
+            [ center, width <| percent 100, verticalCenter ]
+
+
 viewCampus : Device -> Campus -> Msg -> Element Styles Variations Msg
 viewCampus device campus clickMsg =
     el CampusText
@@ -91,17 +100,7 @@ viewCampus device campus clickMsg =
             String.toUpper campus.name
 
 
-viewCampuses : Device -> List Campus -> Element Styles Variations Msg
-viewCampuses device =
-    List.map
-        (\campus ->
-            viewCampus device campus (SelectCampus campus)
-        )
-        >> column None
-            [ center, width <| percent 100, verticalCenter ]
-
-
-viewCohorts : Device -> Dict String CohortAnim -> List Cohort -> Element Styles variation Msg
+viewCohorts : Device -> Dict String CohortAnim -> List Cohort -> Element Styles Variations Msg
 viewCohorts device cohortAnims cohorts =
     let
         cohortsWithAnimations : List ( CohortAnim, Cohort )
@@ -128,59 +127,7 @@ viewCohorts device cohortAnims cohorts =
         column None [ center, paddingBottom 15 ] content
 
 
-viewStudents : Device -> Dict String GithubImage -> List Student -> Element Styles variation Msg
-viewStudents device githubImages students =
-    column None
-        [ center ]
-        (students
-            |> List.map
-                (\{ firstName, github } ->
-                    let
-                        imgSrc =
-                            github
-                                |> Maybe.andThen (flip Dict.get githubImages)
-                                |> Maybe.map
-                                    (\res ->
-                                        case res of
-                                            GithubImage img ->
-                                                img
-
-                                            Loading ->
-                                                "/spin.svg"
-
-                                            Failed ->
-                                                "/logo.png"
-                                    )
-                                |> Maybe.withDefault "/logo.png"
-                    in
-                        column None
-                            [ width <| px 100, height <| px 100, center, padding 5 ]
-                            [ image imgSrc
-                                StudentImg
-                                [ width <| px 50
-                                , height <| px 50
-                                , padding 3
-                                ]
-                                empty
-                            , el HeaderText [ padding 3 ] <| text firstName
-                            , whenJust github
-                                (\username ->
-                                    link ("https://github.com/" ++ username) <|
-                                        el None
-                                            [ target "_blank"
-                                            , padding 3
-                                            ]
-                                        <|
-                                            image "/gh.svg" None [] empty
-                                )
-                            ]
-                )
-            |> greedyGroupsOf 4
-            |> List.map (row None [])
-        )
-
-
-viewCohort : Device -> CohortAnim -> Cohort -> Msg -> Element Styles v Msg
+viewCohort : Device -> CohortAnim -> Cohort -> Msg -> Element Styles Variations Msg
 viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
     let
         datesText =
@@ -208,12 +155,64 @@ viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
             , padding 5
             ]
             empty
-            |> Element.within [ side frontAnim Num <| toString cohort.num, side backAnim None datesText ]
+            |> Element.within
+                [ side frontAnim Num <| toString cohort.num
+                , side backAnim None datesText
+                ]
 
 
-renderAnim : Animation.State -> List (Element.Attribute variation Msg) -> List (Element.Attribute variation Msg)
-renderAnim animStyle otherAttrs =
-    animStyle
-        |> Animation.render
-        |> List.map toAttr
-        |> (++) otherAttrs
+viewStudents : Device -> Dict String GithubImage -> List Student -> Element Styles Variations Msg
+viewStudents device githubImages students =
+    column None
+        [ center ]
+        (students
+            |> List.map
+                (\student ->
+                    let
+                        githubImage =
+                            student.github
+                                |> Maybe.andThen (flip Dict.get githubImages)
+                                |> Maybe.withDefault Failed
+                    in
+                        viewStudent device githubImage student
+                )
+            |> greedyGroupsOf 4
+            |> List.map (row None [])
+        )
+
+
+viewStudent : Device -> GithubImage -> Student -> Element Styles Variations Msg
+viewStudent device githubImage { firstName, github } =
+    let
+        imgSrc =
+            case githubImage of
+                GithubImage img ->
+                    img
+
+                Loading ->
+                    "/spin.svg"
+
+                Failed ->
+                    "/logo.png"
+    in
+        column None
+            [ width <| px 100, height <| px 100, center, padding 5 ]
+            [ image imgSrc
+                StudentImg
+                [ width <| px 50
+                , height <| px 50
+                , padding 3
+                ]
+                empty
+            , el HeaderText [ padding 3 ] <| text firstName
+            , whenJust github
+                (\username ->
+                    link ("https://github.com/" ++ username) <|
+                        el None
+                            [ target "_blank"
+                            , padding 3
+                            ]
+                        <|
+                            image "/gh.svg" None [] empty
+                )
+            ]
