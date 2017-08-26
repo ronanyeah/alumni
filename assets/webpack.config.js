@@ -3,7 +3,7 @@ require('dotenv').config()
 const webpack = require('webpack')
 const { resolve } = require('path')
 
-const outputPath = resolve('./dist')
+const outputPath = resolve('../public')
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -14,7 +14,7 @@ module.exports = {
     filename: 'bundle.js'
   },
   devServer: {
-    contentBase: './dist'
+    contentBase: '../public'
   },
   plugins: [
     new webpack.DefinePlugin({
