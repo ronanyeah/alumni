@@ -8,44 +8,31 @@ import Element.Events exposing (onClick)
 import Helpers exposing (cohortText, getCohortAnim)
 import Html exposing (Html)
 import List.Extra exposing (greedyGroupsOf)
-import Model exposing (Model, Campus, Cohort, CohortAnim, GithubImage(..), Student, Msg(..))
+import Model exposing (Model, Campus, Cohort, CohortAnim, GithubImage(..), State(..), Student, Msg(..))
 import Styling exposing (styling, Styles(..), Variations(..))
 
 
 view : Model -> Html Msg
-view { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages, device } =
+view { campuses, state, cohortAnims, githubImages, device } =
     let
         body =
-            case ( selectedCampus, selectedCohort ) of
-                ( Just campus, Just cohort ) ->
+            case state of
+                CohortSelected campus cohort ->
                     let
                         anim =
                             getCohortAnim cohort cohortAnims
                     in
-                        [ viewCampus device campus
-                        , viewSingleCohort device anim githubImages cohort
+                        [ viewCampus device campus DeselectCampus
+                        , viewCohort device anim cohort DeselectCohort
+                        , viewStudents device githubImages cohort.students
                         ]
 
-                ( Just campus, Nothing ) ->
-                    let
-                        cohortsWithAnimations : List ( CohortAnim, Cohort )
-                        cohortsWithAnimations =
-                            campus.cohorts
-                                |> List.map
-                                    (\cohort ->
-                                        let
-                                            anim =
-                                                getCohortAnim cohort cohortAnims
-                                        in
-                                            ( anim, cohort )
-                                    )
-                    in
-                        [ viewCampus device campus, viewCohorts device cohortsWithAnimations ]
+                CampusSelected campus ->
+                    [ viewCampus device campus DeselectCampus
+                    , viewCohorts device cohortAnims campus.cohorts
+                    ]
 
-                ( Nothing, Nothing ) ->
-                    [ viewCampuses device campuses ]
-
-                ( Nothing, Just _ ) ->
+                NothingSelected ->
                     [ viewCampuses device campuses ]
     in
         viewport styling <|
@@ -54,7 +41,6 @@ view { campuses, selectedCampus, selectedCohort, cohortAnims, githubImages, devi
                 [ header device
                 , column None
                     [ center
-                    , width <| percent 100
                     , verticalCenter
                     ]
                     body
@@ -92,12 +78,12 @@ header { phone } =
                     ]
 
 
-viewCampus : Device -> Campus -> Element Styles Variations Msg
-viewCampus device campus =
+viewCampus : Device -> Campus -> Msg -> Element Styles Variations Msg
+viewCampus device campus clickMsg =
     el CampusText
         [ center
         , verticalCenter
-        , onClick <| SelectCampus campus
+        , onClick clickMsg
         , vary Mobile device.phone
         ]
     <|
@@ -107,34 +93,43 @@ viewCampus device campus =
 
 viewCampuses : Device -> List Campus -> Element Styles Variations Msg
 viewCampuses device =
-    List.map (viewCampus device)
+    List.map
+        (\campus ->
+            viewCampus device campus (SelectCampus campus)
+        )
         >> column None
             [ center, width <| percent 100, verticalCenter ]
 
 
-viewCohorts : Device -> List ( CohortAnim, Cohort ) -> Element Styles variation Msg
-viewCohorts device cohortsWithAnimations =
+viewCohorts : Device -> Dict String CohortAnim -> List Cohort -> Element Styles variation Msg
+viewCohorts device cohortAnims cohorts =
     let
+        cohortsWithAnimations : List ( CohortAnim, Cohort )
+        cohortsWithAnimations =
+            cohorts
+                |> List.map
+                    (\cohort ->
+                        let
+                            anim =
+                                getCohortAnim cohort cohortAnims
+                        in
+                            ( anim, cohort )
+                    )
+
         content =
             cohortsWithAnimations
-                |> List.map (uncurry (cohortCircle device))
+                |> List.map
+                    (\( anim, cohort ) ->
+                        viewCohort device anim cohort (SelectCohort cohort)
+                    )
                 |> greedyGroupsOf 3
-                |> List.map (row None [ spacing 5, padding 5 ])
+                |> List.map (row None [ spacing 5 ])
     in
         column None [ center, paddingBottom 15 ] content
 
 
-viewSingleCohort : Device -> CohortAnim -> Dict String GithubImage -> Cohort -> Element Styles variation Msg
-viewSingleCohort device anim githubImages cohort =
-    column None
-        [ padding 5 ]
-        [ cohortCircle device anim cohort
-        , viewStudents device cohort.students githubImages
-        ]
-
-
-viewStudents : Device -> List Student -> Dict String GithubImage -> Element Styles variation Msg
-viewStudents device students githubImages =
+viewStudents : Device -> Dict String GithubImage -> List Student -> Element Styles variation Msg
+viewStudents device githubImages students =
     column None
         [ center ]
         (students
@@ -185,8 +180,8 @@ viewStudents device students githubImages =
         )
 
 
-cohortCircle : Device -> CohortAnim -> Cohort -> Element Styles v Msg
-cohortCircle device ( frontAnim, backAnim ) cohort =
+viewCohort : Device -> CohortAnim -> Cohort -> Msg -> Element Styles v Msg
+viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
     let
         datesText =
             cohortText cohort.startDate cohort.endDate
@@ -206,10 +201,11 @@ cohortCircle device ( frontAnim, backAnim ) cohort =
                     text txt
     in
         el None
-            [ onClick <| SelectCohort cohort
+            [ onClick clickMsg
             , height <| px size
             , width <| px size
             , center
+            , padding 5
             ]
             empty
             |> Element.within [ side frontAnim Num <| toString cohort.num, side backAnim None datesText ]

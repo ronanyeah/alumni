@@ -15,14 +15,19 @@ type GithubImage
     | GithubImage String
 
 
+type State
+    = NothingSelected
+    | CampusSelected Campus
+    | CohortSelected Campus Cohort
+
+
 type alias CohortAnim =
     ( Animation.State, Animation.State )
 
 
 type alias Model =
     { campuses : List Campus
-    , selectedCampus : Maybe Campus
-    , selectedCohort : Maybe Cohort
+    , state : State
     , cohortAnims : Dict String CohortAnim
     , githubImages : Dict String GithubImage
     , githubAuth : ( String, String )
@@ -79,4 +84,6 @@ type Msg
     | CbCampuses (Result Gr.Error AllCampuses)
     | Resize Window.Size
     | SelectCampus Campus
+    | DeselectCampus
     | SelectCohort Cohort
+    | DeselectCohort

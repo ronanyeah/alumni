@@ -3,11 +3,10 @@ module Update exposing (update)
 import Animation exposing (deg)
 import Dict
 import Element
-import Fixtures exposing (frontInit, backInit)
 import Json.Decode as Decode
-import Helpers exposing (log, sortByStartDate)
+import Helpers exposing (getCohortAnim, log, sortByStartDate)
 import Http
-import Model exposing (Model, Msg(..), GithubImage(..))
+import Model exposing (Model, Msg(..), GithubImage(..), State(..))
 import Time
 
 
@@ -71,127 +70,148 @@ update msg model =
             { model | device = Element.classifyDevice size } ! []
 
         SelectCampus campus ->
-            let
-                selectedCampus =
-                    if Just campus == model.selectedCampus then
-                        Nothing
-                    else
-                        Just campus
-            in
-                { model | selectedCampus = selectedCampus, selectedCohort = Nothing, cohortAnims = Dict.empty } ! []
+            { model | state = CampusSelected campus } ! []
+
+        DeselectCampus ->
+            { model | state = NothingSelected, cohortAnims = Dict.empty } ! []
+
+        DeselectCohort ->
+            case model.state of
+                CohortSelected campus cohort ->
+                    let
+                        ( frontAnim, backAnim ) =
+                            let
+                                ( frontInit, backInit ) =
+                                    getCohortAnim cohort model.cohortAnims
+                            in
+                                ( Animation.interrupt
+                                    [ Animation.toWith
+                                        (Animation.easing
+                                            { duration = 0.2 * Time.second
+                                            , ease = identity
+                                            }
+                                        )
+                                        [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
+                                        , Animation.opacity 1
+                                        ]
+                                    ]
+                                    frontInit
+                                , Animation.interrupt
+                                    [ Animation.toWith
+                                        (Animation.easing
+                                            { duration = 0.2 * Time.second
+                                            , ease = identity
+                                            }
+                                        )
+                                        [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
+                                        , Animation.opacity 0
+                                        ]
+                                    ]
+                                    backInit
+                                )
+                    in
+                        { model
+                            | state = CampusSelected campus
+                            , cohortAnims =
+                                model.cohortAnims
+                                    |> Dict.insert cohort.id ( frontAnim, backAnim )
+                        }
+                            ! []
+
+                _ ->
+                    Debug.crash "OOPS"
 
         SelectCohort cohort ->
-            let
-                ( selectedCohort, frontAnim, backAnim ) =
-                    if Just cohort == model.selectedCohort then
-                        ( Nothing
-                        , Animation.interrupt
-                            [ Animation.toWith
-                                (Animation.easing
-                                    { duration = 0.2 * Time.second
-                                    , ease = identity
-                                    }
-                                )
-                                [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
-                                , Animation.opacity 1
-                                ]
-                            ]
-                            front
-                        , Animation.interrupt
-                            [ Animation.toWith
-                                (Animation.easing
-                                    { duration = 0.2 * Time.second
-                                    , ease = identity
-                                    }
-                                )
-                                [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
-                                , Animation.opacity 0
-                                ]
-                            ]
-                            back
-                        )
-                    else
-                        ( Just cohort
-                        , Animation.interrupt
-                            [ Animation.toWith
-                                (Animation.easing
-                                    { duration = 0.2 * Time.second
-                                    , ease = identity
-                                    }
-                                )
-                                [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
-                                , Animation.opacity 0
-                                ]
-                            ]
-                            front
-                        , Animation.interrupt
-                            [ Animation.toWith
-                                (Animation.easing
-                                    { duration = 0.2 * Time.second
-                                    , ease = identity
-                                    }
-                                )
-                                [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
-                                , Animation.opacity 1
-                                ]
-                            ]
-                            back
-                        )
-
-                ( front, back ) =
-                    model.cohortAnims
-                        |> Dict.get cohort.id
-                        |> Maybe.withDefault ( frontInit, backInit )
-
-                githubUsernames =
-                    List.filterMap .github cohort.students
-
-                githubAuth =
+            case model.state of
+                CampusSelected campus ->
                     let
-                        ( githubId, gitHubSecret ) =
-                            model.githubAuth
-                    in
-                        "?client_id=" ++ githubId ++ "&client_secret=" ++ gitHubSecret
+                        ( frontAnim, backAnim ) =
+                            let
+                                ( frontInit, backInit ) =
+                                    getCohortAnim cohort model.cohortAnims
+                            in
+                                ( Animation.interrupt
+                                    [ Animation.toWith
+                                        (Animation.easing
+                                            { duration = 0.2 * Time.second
+                                            , ease = identity
+                                            }
+                                        )
+                                        [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
+                                        , Animation.opacity 0
+                                        ]
+                                    ]
+                                    frontInit
+                                , Animation.interrupt
+                                    [ Animation.toWith
+                                        (Animation.easing
+                                            { duration = 0.2 * Time.second
+                                            , ease = identity
+                                            }
+                                        )
+                                        [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
+                                        , Animation.opacity 1
+                                        ]
+                                    ]
+                                    backInit
+                                )
 
-                usernamesToRequest =
-                    githubUsernames
-                        |> List.filterMap
-                            (\username ->
-                                case Dict.get username model.githubImages of
-                                    Just (GithubImage _) ->
-                                        Nothing
+                        githubUsernames =
+                            cohort.students
+                                |> List.filterMap .github
 
-                                    Just Loading ->
-                                        Nothing
+                        usernamesToRequest =
+                            githubUsernames
+                                |> List.filterMap
+                                    (\username ->
+                                        case Dict.get username model.githubImages of
+                                            Just (GithubImage _) ->
+                                                Nothing
 
-                                    _ ->
-                                        Just username
-                            )
+                                            Just Loading ->
+                                                Nothing
 
-                requests =
-                    usernamesToRequest
-                        |> List.map
-                            (\username ->
-                                Http.get
-                                    ("https://api.github.com/users/"
-                                        ++ username
-                                        ++ githubAuth
+                                            Just Failed ->
+                                                Nothing
+
+                                            Nothing ->
+                                                Just username
                                     )
-                                    (Decode.field "avatar_url" Decode.string)
-                                    |> Http.send (CbGithubImage username)
-                            )
-            in
-                { model
-                    | selectedCohort = selectedCohort
-                    , githubImages =
-                        Dict.union
-                            (usernamesToRequest
-                                |> List.map (flip (,) Loading)
-                                |> Dict.fromList
-                            )
-                            model.githubImages
-                    , cohortAnims =
-                        model.cohortAnims
-                            |> Dict.insert cohort.id ( frontAnim, backAnim )
-                }
-                    ! requests
+
+                        requests =
+                            let
+                                ( githubId, gitHubSecret ) =
+                                    model.githubAuth
+
+                                githubAuth =
+                                    "?client_id=" ++ githubId ++ "&client_secret=" ++ gitHubSecret
+                            in
+                                usernamesToRequest
+                                    |> List.map
+                                        (\username ->
+                                            Http.get
+                                                ("https://api.github.com/users/"
+                                                    ++ username
+                                                    ++ githubAuth
+                                                )
+                                                (Decode.field "avatar_url" Decode.string)
+                                                |> Http.send (CbGithubImage username)
+                                        )
+                    in
+                        { model
+                            | state = CohortSelected campus cohort
+                            , githubImages =
+                                Dict.union
+                                    (usernamesToRequest
+                                        |> List.map (flip (,) Loading)
+                                        |> Dict.fromList
+                                    )
+                                    model.githubImages
+                            , cohortAnims =
+                                model.cohortAnims
+                                    |> Dict.insert cohort.id ( frontAnim, backAnim )
+                        }
+                            ! requests
+
+                _ ->
+                    Debug.crash "OOPS"

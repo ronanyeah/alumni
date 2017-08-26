@@ -2,14 +2,13 @@ module Fixtures exposing (..)
 
 import Animation exposing (deg)
 import Dict
-import Model exposing (Model)
+import Model exposing (Model, State(NothingSelected))
 
 
 emptyModel : Model
 emptyModel =
     { campuses = []
-    , selectedCampus = Nothing
-    , selectedCohort = Nothing
+    , state = NothingSelected
     , cohortAnims = Dict.empty
     , githubImages = Dict.empty
     , githubAuth = ( "", "" )
