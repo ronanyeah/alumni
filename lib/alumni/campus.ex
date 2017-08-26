@@ -1,13 +1,13 @@
-defmodule Wow.Campus do
+defmodule Alumni.Campus do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Wow.Campus
+  alias Alumni.Campus
 
 
   schema "campuses" do
     field :name, :string
 
-    has_many :cohorts, Wow.Cohort, foreign_key: :campus_id
+    has_many :cohorts, Alumni.Cohort, foreign_key: :campus_id
 
     timestamps()
   end

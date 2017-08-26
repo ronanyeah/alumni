@@ -1,4 +1,4 @@
-defmodule Wow.Web.ChannelCase do
+defmodule AlumniWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -21,15 +21,15 @@ defmodule Wow.Web.ChannelCase do
       use Phoenix.ChannelTest
 
       # The default endpoint for testing
-      @endpoint Wow.Web.Endpoint
+      @endpoint AlumniWeb.Endpoint
     end
   end
 
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Wow.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Alumni.Repo)
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Wow.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Alumni.Repo, {:shared, self()})
     end
     :ok
   end

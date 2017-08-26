@@ -1,5 +1,5 @@
-defmodule Wow.Web.ErrorView do
-  use Wow.Web, :view
+defmodule AlumniWeb.ErrorView do
+  use AlumniWeb, :view
 
   def render("404.json", _assigns) do
     %{errors: %{detail: "Page not found"}}

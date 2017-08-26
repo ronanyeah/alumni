@@ -1,8 +1,8 @@
-defmodule Wow.Web.UserSocket do
+defmodule AlumniWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", Wow.Web.RoomChannel
+  # channel "room:*", AlumniWeb.RoomChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -30,7 +30,7 @@ defmodule Wow.Web.UserSocket do
   # Would allow you to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
   #
-  #     Wow.Web.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
+  #     AlumniWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
   def id(_socket), do: nil

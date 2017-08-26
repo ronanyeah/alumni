@@ -1,17 +1,17 @@
-defmodule Wow.Web.Router do
-  use Wow.Web, :router
+defmodule AlumniWeb.Router do
+  use AlumniWeb, :router
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
-  scope "/api", Wow.Web do
+  scope "/api", AlumniWeb do
     pipe_through :api
   end
 
   forward "/graph", Absinthe.Plug,
-    schema: Wow.Schema
+    schema: Alumni.Schema
 
   forward "/graphiql", Absinthe.Plug.GraphiQL,
-    schema: Wow.Schema
+    schema: Alumni.Schema
 end

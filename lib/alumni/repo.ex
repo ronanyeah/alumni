@@ -1,5 +1,5 @@
-defmodule Wow.Repo do
-  use Ecto.Repo, otp_app: :wow
+defmodule Alumni.Repo do
+  use Ecto.Repo, otp_app: :alumni
 
   @doc """
   Dynamically loads the repository url from the

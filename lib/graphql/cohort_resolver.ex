@@ -1,5 +1,5 @@
-defmodule Wow.CohortResolver do
-  alias Wow.{Cohort, Repo}
+defmodule Alumni.CohortResolver do
+  alias Alumni.{Cohort, Repo}
 
   def all(_args, _info) do
     {:ok, Repo.all(Cohort)}

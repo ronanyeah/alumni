@@ -6,15 +6,15 @@
 use Mix.Config
 
 # General application configuration
-config :wow,
-  ecto_repos: [Wow.Repo]
+config :alumni,
+  ecto_repos: [Alumni.Repo]
 
 # Configures the endpoint
-config :wow, Wow.Web.Endpoint,
+config :alumni, AlumniWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "JIz7aRiD+XbB4k9fYpU+WgSRZhLkP8YDmqk8bisOfNGMFNOayL6KonoKox+wejnF",
-  render_errors: [view: Wow.Web.ErrorView, accepts: ~w(json)],
-  pubsub: [name: Wow.PubSub,
+  secret_key_base: "w0kJmRi0TuSB+EsSdFKxPip/B1V9RG5D2R1T8ywCHz/CxR0o2b+oeYyGqJs/wFos",
+  render_errors: [view: AlumniWeb.ErrorView, accepts: ~w(json)],
+  pubsub: [name: Alumni.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger

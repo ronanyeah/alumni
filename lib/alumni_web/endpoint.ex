@@ -1,15 +1,15 @@
-defmodule Wow.Web.Endpoint do
-  use Phoenix.Endpoint, otp_app: :wow
+defmodule AlumniWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :alumni
 
-  socket "/socket", Wow.Web.UserSocket
+  socket "/socket", AlumniWeb.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
   plug Plug.Static,
-    at: "/", from: :wow, gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt bundle.js index.html logo.png UGmed.ttf UG.ttf gh.svg spin.svg)
+    at: "/", from: :alumni, gzip: false,
+    only: ~w(css fonts images js favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -33,10 +33,12 @@ defmodule Wow.Web.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session,
     store: :cookie,
-    key: "_wow_key",
-    signing_salt: "bNak3FpC"
+    key: "_alumni_key",
+    signing_salt: "2WcoBEQ2"
 
-  plug Wow.Web.Router
+  plug CORSPlug
+
+  plug AlumniWeb.Router
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.

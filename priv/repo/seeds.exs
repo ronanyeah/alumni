@@ -1,8 +1,8 @@
-alias Wow.Repo
+alias Alumni.Repo
 
-alias Wow.Campus
-alias Wow.Cohort
-alias Wow.Student
+alias Alumni.Campus
+alias Alumni.Cohort
+alias Alumni.Student
 
 Repo.delete_all Student
 Repo.delete_all Cohort

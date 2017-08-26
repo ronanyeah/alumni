@@ -1,6 +1,6 @@
-defmodule Wow.Schema.Types do
+defmodule Alumni.Schema.Types do
   use Absinthe.Schema.Notation
-  use Absinthe.Ecto, repo: Wow.Repo
+  use Absinthe.Ecto, repo: Alumni.Repo
 
   object :campus do
     field :id, :id

@@ -1,9 +1,9 @@
-defmodule Wow.Mixfile do
+defmodule Alumni.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :wow,
+      app: :alumni,
       version: "0.0.1",
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env),
@@ -19,7 +19,7 @@ defmodule Wow.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Wow.Application, []},
+      mod: {Alumni.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -33,16 +33,17 @@ defmodule Wow.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.3.0-rc"},
+      {:phoenix, "~> 1.3.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
-      {:absinthe, "~> 1.3.0-rc.0"},
-      {:absinthe_plug, "~> 1.3.0-rc.0"},
-      {:absinthe_ecto, git: "https://github.com/absinthe-graphql/absinthe_ecto.git"},
-      {:faker, "~> 0.7"}
+      {:faker, "~> 0.7"},
+      {:cors_plug, "~> 1.4"},
+      {:absinthe, "~> 1.3"},
+      {:absinthe_plug, "~> 1.3"},
+      {:absinthe_ecto, "~> 0.1.2"}
     ]
   end
 

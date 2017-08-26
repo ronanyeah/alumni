@@ -1,7 +1,7 @@
-defmodule Wow.Student do
+defmodule Alumni.Student do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Wow.Student
+  alias Alumni.Student
 
 
   schema "students" do
@@ -9,7 +9,7 @@ defmodule Wow.Student do
     field :github, :string
     field :last_name, :string
 
-    belongs_to :cohort, Wow.Cohort, foreign_key: :cohort_id
+    belongs_to :cohort, Alumni.Cohort, foreign_key: :cohort_id
 
     timestamps()
   end

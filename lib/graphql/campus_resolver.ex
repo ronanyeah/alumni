@@ -1,5 +1,5 @@
-defmodule Wow.CampusResolver do
-  alias Wow.{Campus, Repo}
+defmodule Alumni.CampusResolver do
+  alias Alumni.{Campus, Repo}
 
   def all(_args, _info) do
     {:ok, Repo.all(Campus)}

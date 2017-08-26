@@ -1,4 +1,4 @@
-defmodule Wow.DataCase do
+defmodule Alumni.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -16,20 +16,20 @@ defmodule Wow.DataCase do
 
   using do
     quote do
-      alias Wow.Repo
+      alias Alumni.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import Wow.DataCase
+      import Alumni.DataCase
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Wow.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Alumni.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Wow.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Alumni.Repo, {:shared, self()})
     end
 
     :ok
