@@ -3,7 +3,7 @@ require('dotenv').config()
 const webpack = require('webpack')
 const { resolve } = require('path')
 
-const outputPath = resolve('../priv/static')
+const outputPath = resolve('./dist')
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -13,9 +13,12 @@ module.exports = {
     path: outputPath,
     filename: 'bundle.js'
   },
+  devServer: {
+    contentBase: './dist'
+  },
   plugins: [
     new webpack.DefinePlugin({
-      GRAPHQL_ENDPOINT: JSON.stringify(PROD ? process.env.GRAPHCOOL : '/graph?query='),
+      GRAPHQL_ENDPOINT: JSON.stringify(PROD ? process.env.GRAPHCOOL : 'http://localhost:4000/graph'),
       GITHUB_ID: JSON.stringify(process.env.GITHUB_ID || ''),
       GITHUB_SECRET: JSON.stringify(process.env.GITHUB_SECRET || '')
     }),
