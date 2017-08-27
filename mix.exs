@@ -39,7 +39,7 @@ defmodule Alumni.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
-      {:faker, "~> 0.7"},
+      {:faker, "~> 0.8"},
       {:cors_plug, "~> 1.4"},
       {:absinthe, "~> 1.3"},
       {:absinthe_plug, "~> 1.3"}

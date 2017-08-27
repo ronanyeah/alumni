@@ -1,9 +1,11 @@
-require('dotenv').config()
-
 const webpack = require('webpack')
 const { resolve } = require('path')
 
 const PROD = process.env.NODE_ENV === 'production'
+
+if (!PROD) {
+  require('dotenv').config()
+}
 
 module.exports = {
   entry: resolve(__dirname, 'client/index.js'),
