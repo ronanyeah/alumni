@@ -3,7 +3,6 @@ defmodule Alumni.Campus do
   import Ecto.Changeset
   alias Alumni.Campus
 
-
   schema "campuses" do
     field :name, :string
 

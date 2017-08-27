@@ -42,8 +42,7 @@ defmodule Alumni.Mixfile do
       {:faker, "~> 0.7"},
       {:cors_plug, "~> 1.4"},
       {:absinthe, "~> 1.3"},
-      {:absinthe_plug, "~> 1.3"},
-      {:absinthe_ecto, "~> 0.1.2"}
+      {:absinthe_plug, "~> 1.3"}
     ]
   end
 

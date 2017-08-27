@@ -3,7 +3,6 @@ defmodule Alumni.Cohort do
   import Ecto.Changeset
   alias Alumni.Cohort
 
-
   schema "cohorts" do
     field :start_date, :date
     field :end_date, :date

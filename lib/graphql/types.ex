@@ -1,12 +1,14 @@
 defmodule Alumni.Schema.Types do
   use Absinthe.Schema.Notation
-  use Absinthe.Ecto, repo: Alumni.Repo
+
+  alias Alumni.CohortResolver
+  alias Alumni.StudentResolver
 
   object :campus do
     field :id, :id
     field :name, :string
 
-    field :cohorts, list_of(:cohort), resolve: assoc(:cohorts)
+    field :cohorts, list_of(:cohort), resolve: &CohortResolver.find/3
   end
 
   object :cohort do
@@ -15,8 +17,8 @@ defmodule Alumni.Schema.Types do
     field :start_date, :string
     field :end_date, :string
 
-    field :campus, :campus, resolve: assoc(:campuses)
-    field :students, list_of(:student), resolve: assoc(:students)
+    field :campus, :campus
+    field :students, list_of(:student), resolve: &StudentResolver.find/3
   end
 
   object :student do
@@ -26,6 +28,6 @@ defmodule Alumni.Schema.Types do
     field :last_name, :string
     field :github, :string
 
-    field :cohort, :cohort, resolve: assoc(:cohorts)
+    field :cohort, :cohort
   end
 end
