@@ -18,7 +18,7 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      GRAPHQL_ENDPOINT: JSON.stringify(PROD ? process.env.GRAPHCOOL : 'http://localhost:4000/graph'),
+      GRAPHQL_ENDPOINT: JSON.stringify(process.env.GRAPHQL_ENDPOINT || 'http://localhost:4000/graph'),
       GITHUB_ID: JSON.stringify(process.env.GITHUB_ID || ''),
       GITHUB_SECRET: JSON.stringify(process.env.GITHUB_SECRET || '')
     }),
