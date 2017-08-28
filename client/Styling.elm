@@ -55,7 +55,7 @@ styling =
             ]
         , style CohortDates
             [ Font.size 20, variation Mobile [ Font.size 10 ] ]
-        , style CohortNum [ Font.size 80 ]
+        , style CohortNum [ Font.size 80, variation Mobile [ Font.size 50 ] ]
         , style None []
         , style StudentImg [ Border.rounded 25, Shadow.simple ]
         , style Text [ Font.typeface [ "UGmed" ], text Color.black ]

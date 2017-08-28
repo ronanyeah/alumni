@@ -132,7 +132,9 @@ viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
     let
         size =
             if device.phone then
-                120
+                device.width
+                    |> toFloat
+                    |> (*) 0.3
             else
                 200
 
@@ -141,7 +143,7 @@ viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
                 CampusCircle
                 (renderAnim frontAnim [ center, verticalCenter ])
             <|
-                el CohortNum [ center, verticalCenter ] <|
+                el CohortNum [ vary Mobile device.phone, center, verticalCenter ] <|
                     text <|
                         toString cohort.num
 
