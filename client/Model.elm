@@ -73,15 +73,10 @@ type alias Student =
     }
 
 
-type alias AllCampuses =
-    { allCampuses : List CampusWithoutNum
-    }
-
-
 type Msg
     = Animate Animation.Msg
     | CbGithubImage String (Result Http.Error String)
-    | CbCampuses (Result Gr.Error AllCampuses)
+    | CbCampuses (Result Gr.Error (List CampusWithoutNum))
     | Resize Window.Size
     | SelectCampus Campus
     | DeselectCampus

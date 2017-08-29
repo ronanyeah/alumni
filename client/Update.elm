@@ -26,10 +26,10 @@ update msg model =
 
         CbCampuses res ->
             case res of
-                Ok { allCampuses } ->
+                Ok campuses ->
                     let
                         data =
-                            allCampuses
+                            campuses
                                 |> List.map
                                     (\campus ->
                                         let
@@ -119,7 +119,7 @@ update msg model =
                             ! []
 
                 _ ->
-                    Debug.crash "OOPS"
+                    model ! []
 
         SelectCohort cohort ->
             case model.state of
@@ -214,4 +214,4 @@ update msg model =
                             ! requests
 
                 _ ->
-                    Debug.crash "OOPS"
+                    model ! []

@@ -1,53 +1,46 @@
-module Api exposing (fetchData)
+module Api exposing (fetchCampuses)
 
 import Helpers exposing (dateParse)
-import Model exposing (AllCampuses, CohortWithoutNum, CampusWithoutNum, Student)
-import GraphQL.Client.Http as Gr
-import GraphQL.Request.Builder as G
+import Model exposing (CohortWithoutNum, CampusWithoutNum, Student)
+import GraphQL.Client.Http as Http
+import GraphQL.Request.Builder exposing (ValueSpec, NonNull, ObjectType, queryDocument, extract, field, list, map, nullable, object, request, string, with)
 import Task exposing (Task)
 
 
-fetchData : String -> Task Gr.Error AllCampuses
-fetchData url =
-    Gr.sendQuery url queryAllData
-
-
-queryAllData : G.Request G.Query AllCampuses
-queryAllData =
-    let
-        query : G.Document G.Query AllCampuses vars
-        query =
-            G.object AllCampuses
-                |> G.with (G.field "allCampuses" [] (G.list campus))
-                |> G.queryDocument
-    in
-        G.request () query
+fetchCampuses : String -> Task Http.Error (List CampusWithoutNum)
+fetchCampuses url =
+    Http.sendQuery url <|
+        request () <|
+            queryDocument <|
+                extract <|
+                    field "allCampuses" [] <|
+                        list campus
 
 
 
 -- GRAPHQL TYPES
 
 
-campus : G.ValueSpec G.NonNull G.ObjectType CampusWithoutNum vars
+campus : ValueSpec NonNull ObjectType CampusWithoutNum vars
 campus =
-    G.object CampusWithoutNum
-        |> G.with (G.field "id" [] G.string)
-        |> G.with (G.field "name" [] G.string)
-        |> G.with (G.field "cohorts" [] (G.list cohort))
+    object CampusWithoutNum
+        |> with (field "id" [] string)
+        |> with (field "name" [] string)
+        |> with (field "cohorts" [] (list cohort))
 
 
-cohort : G.ValueSpec G.NonNull G.ObjectType CohortWithoutNum vars
+cohort : ValueSpec NonNull ObjectType CohortWithoutNum vars
 cohort =
-    G.object CohortWithoutNum
-        |> G.with (G.field "id" [] G.string)
-        |> G.with (G.field "startDate" [] (G.map dateParse G.string))
-        |> G.with (G.field "endDate" [] (G.map dateParse G.string))
-        |> G.with (G.field "students" [] (G.list student))
+    object CohortWithoutNum
+        |> with (field "id" [] string)
+        |> with (field "startDate" [] (map dateParse string))
+        |> with (field "endDate" [] (map dateParse string))
+        |> with (field "students" [] (list student))
 
 
-student : G.ValueSpec G.NonNull G.ObjectType Student vars
+student : ValueSpec NonNull ObjectType Student vars
 student =
-    G.object Student
-        |> G.with (G.field "id" [] G.string)
-        |> G.with (G.field "firstName" [] G.string)
-        |> G.with (G.field "github" [] <| G.nullable G.string)
+    object Student
+        |> with (field "id" [] string)
+        |> with (field "firstName" [] string)
+        |> with (field "github" [] <| nullable string)

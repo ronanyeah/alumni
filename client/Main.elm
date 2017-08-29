@@ -29,7 +29,7 @@ init ( url, githubId, githubSecret ) =
             Fixtures.emptyModel
     in
         { model | githubAuth = ( githubId, githubSecret ) }
-            ! [ Task.attempt CbCampuses (Api.fetchData url)
+            ! [ Task.attempt CbCampuses (Api.fetchCampuses url)
               , Task.perform Resize Window.size
               ]
 
