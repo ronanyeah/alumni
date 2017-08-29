@@ -6,8 +6,30 @@ import Element
 import Json.Decode as Decode
 import Helpers exposing (getCohortAnim, log, sortByStartDate)
 import Http
-import Model exposing (Model, Msg(..), GithubImage(..), State(..))
+import Model exposing (Campus, CampusWithoutNum, Model, Msg(..), GithubImage(..), State(..))
 import Time
+
+
+addFacNumbers : List CampusWithoutNum -> List Campus
+addFacNumbers =
+    List.map
+        (\campus ->
+            let
+                numberedCohorts =
+                    campus.cohorts
+                        |> sortByStartDate
+                        |> List.indexedMap
+                            (\i cohort ->
+                                { id = cohort.id
+                                , startDate = cohort.startDate
+                                , endDate = cohort.endDate
+                                , students = cohort.students
+                                , num = i + 1
+                                }
+                            )
+            in
+                { campus | cohorts = numberedCohorts }
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -19,7 +41,9 @@ update msg model =
                     model.cohortAnims
                         |> Dict.map
                             (\_ ( front, back ) ->
-                                ( Animation.update animMsg front, Animation.update animMsg back )
+                                ( Animation.update animMsg front
+                                , Animation.update animMsg back
+                                )
                             )
             }
                 ! []
@@ -27,32 +51,10 @@ update msg model =
         CbCampuses res ->
             case res of
                 Ok campuses ->
-                    let
-                        data =
-                            campuses
-                                |> List.map
-                                    (\campus ->
-                                        let
-                                            numberedCohorts =
-                                                campus.cohorts
-                                                    |> sortByStartDate
-                                                    |> List.indexedMap
-                                                        (\i cohort ->
-                                                            { id = cohort.id
-                                                            , startDate = cohort.startDate
-                                                            , endDate = cohort.endDate
-                                                            , students = cohort.students
-                                                            , num = i + 1
-                                                            }
-                                                        )
-                                        in
-                                            { campus | cohorts = numberedCohorts }
-                                    )
-                    in
-                        { model
-                            | campuses = data
-                        }
-                            ! []
+                    { model
+                        | campuses = addFacNumbers campuses
+                    }
+                        ! []
 
                 Err err ->
                     model ! [ log "err" err ]
@@ -60,7 +62,11 @@ update msg model =
         CbGithubImage username res ->
             case res of
                 Ok img ->
-                    { model | githubImages = Dict.insert username (GithubImage img) model.githubImages } ! []
+                    { model
+                        | githubImages =
+                            Dict.insert username (GithubImage img) model.githubImages
+                    }
+                        ! []
 
                 Err err ->
                     { model | githubImages = Dict.insert username Failed model.githubImages }
