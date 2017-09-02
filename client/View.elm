@@ -30,7 +30,7 @@ view { campuses, state, cohortAnims, githubImages, device } =
                             getCohortAnim cohort cohortAnims
                     in
                         [ viewCampus device campus DeselectCampus
-                        , viewCohort device anim cohort DeselectCohort
+                        , el None [ padding 5 ] <| viewCohort device anim cohort DeselectCohort
                         , viewStudents device githubImages cohort.students
                         ]
     in
