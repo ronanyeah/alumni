@@ -12,7 +12,7 @@ import View exposing (view)
 import Window
 
 
-main : Program ( String, String, String ) Model Msg
+main : Program ( String, String ) Model Msg
 main =
     Html.programWithFlags
         { init = init
@@ -22,13 +22,13 @@ main =
         }
 
 
-init : ( String, String, String ) -> ( Model, Cmd Msg )
-init ( url, githubId, githubSecret ) =
+init : ( String, String ) -> ( Model, Cmd Msg )
+init ( url, githubToken ) =
     let
         model =
             Fixtures.emptyModel
     in
-        { model | githubAuth = ( githubId, githubSecret ) }
+        { model | githubToken = githubToken }
             ! [ Task.attempt CbCampuses (Api.fetchCampuses url)
               , Task.perform Resize Window.size
               ]

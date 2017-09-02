@@ -30,7 +30,7 @@ type alias Model =
     , state : State
     , cohortAnims : Dict String CohortAnim
     , githubImages : Dict String GithubImage
-    , githubAuth : ( String, String )
+    , githubToken : String
     , device : Element.Device
     }
 
@@ -75,7 +75,7 @@ type alias Student =
 
 type Msg
     = Animate Animation.Msg
-    | CbGithubImage String (Result Http.Error String)
+    | CbGithubImages (List String) (Result Gr.Error (Dict String String))
     | CbCampuses (Result Gr.Error (List CampusWithoutNum))
     | Resize Window.Size
     | SelectCampus Campus

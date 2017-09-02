@@ -1,12 +1,13 @@
 module Update exposing (update)
 
+import Api
 import Animation exposing (deg)
 import Dict
 import Element
-import Json.Decode as Decode
 import Helpers exposing (getCohortAnim, log, sortByStartDate)
-import Http
 import Model exposing (Campus, CampusWithoutNum, Model, Msg(..), GithubImage(..), State(..))
+import Murmur3 exposing (hashString)
+import Task
 import Time
 
 
@@ -59,18 +60,34 @@ update msg model =
                 Err err ->
                     model ! [ log "err" err ]
 
-        CbGithubImage username res ->
+        CbGithubImages requestedUsernames res ->
             case res of
-                Ok img ->
-                    { model
-                        | githubImages =
-                            Dict.insert username (GithubImage img) model.githubImages
-                    }
-                        ! []
+                Ok data ->
+                    let
+                        imgs =
+                            List.foldl
+                                (\username dict ->
+                                    let
+                                        hashedUsername =
+                                            "G" ++ (username |> hashString 1234 |> toString)
+
+                                        val =
+                                            case Dict.get hashedUsername data of
+                                                Just avatarUrl ->
+                                                    GithubImage avatarUrl
+
+                                                Nothing ->
+                                                    Failed
+                                    in
+                                        Dict.insert username val dict
+                                )
+                                model.githubImages
+                                requestedUsernames
+                    in
+                        { model | githubImages = imgs } ! []
 
                 Err err ->
-                    { model | githubImages = Dict.insert username Failed model.githubImages }
-                        ! [ log "github err" err ]
+                    model ! [ log "err" err ]
 
         Resize size ->
             { model | device = Element.classifyDevice size } ! []
@@ -184,40 +201,36 @@ update msg model =
                                                 Just username
                                     )
 
-                        requests =
-                            let
-                                ( githubId, gitHubSecret ) =
-                                    model.githubAuth
-
-                                githubAuth =
-                                    "?client_id=" ++ githubId ++ "&client_secret=" ++ gitHubSecret
-                            in
-                                usernamesToRequest
-                                    |> List.map
-                                        (\username ->
-                                            Http.get
-                                                ("https://api.github.com/users/"
-                                                    ++ username
-                                                    ++ githubAuth
-                                                )
-                                                (Decode.field "avatar_url" Decode.string)
-                                                |> Http.send (CbGithubImage username)
-                                        )
+                        modelWithAnimations =
+                            { model
+                                | state = CohortSelected campus cohort
+                                , cohortAnims =
+                                    model.cohortAnims
+                                        |> Dict.insert cohort.id ( frontAnim, backAnim )
+                            }
                     in
-                        { model
-                            | state = CohortSelected campus cohort
-                            , githubImages =
-                                Dict.union
-                                    (usernamesToRequest
-                                        |> List.map (flip (,) Loading)
-                                        |> Dict.fromList
-                                    )
-                                    model.githubImages
-                            , cohortAnims =
-                                model.cohortAnims
-                                    |> Dict.insert cohort.id ( frontAnim, backAnim )
-                        }
-                            ! requests
+                        if List.length usernamesToRequest == 0 then
+                            modelWithAnimations ! []
+                        else
+                            let
+                                updatedImageDict =
+                                    Dict.union
+                                        (usernamesToRequest
+                                            |> List.map (flip (,) Loading)
+                                            |> Dict.fromList
+                                        )
+                                        model.githubImages
+
+                                imagesRequest =
+                                    Task.attempt (CbGithubImages usernamesToRequest) <|
+                                        Api.fetchAvatars
+                                            model.githubToken
+                                            usernamesToRequest
+                            in
+                                { modelWithAnimations
+                                    | githubImages = updatedImageDict
+                                }
+                                    ! [ imagesRequest ]
 
                 _ ->
                     model ! []

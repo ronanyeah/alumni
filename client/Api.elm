@@ -1,20 +1,50 @@
-module Api exposing (fetchCampuses)
+module Api exposing (fetchAvatars, fetchCampuses)
 
+import Dict exposing (Dict)
 import Helpers exposing (dateParse)
+import Http exposing (header)
+import GraphQL.Request.Builder.Arg as Arg
+import GraphQL.Client.Http exposing (Error, sendQuery, customSendQuery)
+import GraphQL.Request.Builder exposing (Field, ValueSpec, NonNull, ObjectType, SelectionSpec, aliasAs, dict, queryDocument, extract, field, list, map, nullable, object, request, string, with)
 import Model exposing (CohortWithoutNum, CampusWithoutNum, Student)
-import GraphQL.Client.Http as Http
-import GraphQL.Request.Builder exposing (ValueSpec, NonNull, ObjectType, queryDocument, extract, field, list, map, nullable, object, request, string, with)
+import Murmur3 exposing (hashString)
 import Task exposing (Task)
 
 
-fetchCampuses : String -> Task Http.Error (List CampusWithoutNum)
+fetchCampuses : String -> Task Error (List CampusWithoutNum)
 fetchCampuses url =
-    Http.sendQuery url <|
+    sendQuery url <|
         request () <|
             queryDocument <|
                 extract <|
                     field "allCampuses" [] <|
                         list campus
+
+
+userAvatarUrlField : String -> SelectionSpec Field String vars
+userAvatarUrlField name =
+    aliasAs ("G" ++ (name |> hashString 1234 |> toString)) <|
+        field "user"
+            [ ( "login", Arg.string name ) ]
+        <|
+            extract <|
+                field "avatarUrl" [] string
+
+
+fetchAvatars : String -> List String -> Task Error (Dict String String)
+fetchAvatars token usernames =
+    customSendQuery
+        { method = "POST"
+        , headers = [ header "Authorization" <| "Bearer " ++ token ]
+        , url = "https://api.github.com/graphql"
+        , timeout = Nothing
+        , withCredentials = False
+        }
+    <|
+        request () <|
+            queryDocument <|
+                dict <|
+                    List.map userAvatarUrlField usernames
 
 
 
