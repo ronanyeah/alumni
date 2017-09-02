@@ -37,11 +37,11 @@ init ( url, githubId, githubSecret ) =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     let
-        cohortHovers =
+        cohortAnimations =
             Dict.values model.cohortAnims
                 |> List.foldl (\( a, b ) acc -> acc ++ [ a, b ]) []
     in
         Sub.batch
-            [ Animation.subscription Animate cohortHovers
+            [ Animation.subscription Animate cohortAnimations
             , Window.resizes Resize
             ]
