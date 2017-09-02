@@ -54,7 +54,7 @@ styling =
             , variation Mobile [ Font.size 30 ]
             ]
         , style CohortDates
-            [ Font.size 20, variation Mobile [ Font.size 10 ] ]
+            [ Font.size 20, variation Mobile [ Font.size 15 ] ]
         , style CohortNum [ Font.size 80, variation Mobile [ Font.size 50 ] ]
         , style None []
         , style StudentImg [ Border.rounded 25, Shadow.simple ]
