@@ -4,7 +4,6 @@ import Animation
 import Date
 import Dict exposing (Dict)
 import Element
-import Http
 import GraphQL.Client.Http as Gr
 import Window
 
@@ -75,7 +74,7 @@ type alias Student =
 
 type Msg
     = Animate Animation.Msg
-    | CbGithubImages (List String) (Result Gr.Error (Dict String String))
+    | CbGithubImages (Result Gr.Error (List ( String, Maybe String )))
     | CbCampuses (Result Gr.Error (List CampusWithoutNum))
     | Resize Window.Size
     | SelectCampus Campus

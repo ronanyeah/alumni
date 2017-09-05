@@ -6,7 +6,6 @@ import Dict
 import Element
 import Helpers exposing (getCohortAnim, log, sortByStartDate)
 import Model exposing (Campus, CampusWithoutNum, Model, Msg(..), GithubImage(..), State(..))
-import Murmur3 exposing (hashString)
 import Task
 import Time
 
@@ -60,29 +59,26 @@ update msg model =
                 Err err ->
                     model ! [ log "err" err ]
 
-        CbGithubImages requestedUsernames res ->
+        CbGithubImages res ->
             case res of
-                Ok data ->
+                Ok results ->
                     let
                         imgs =
-                            List.foldl
-                                (\username dict ->
-                                    let
-                                        hashedUsername =
-                                            "G" ++ (username |> hashString 1234 |> toString)
+                            results
+                                |> List.foldl
+                                    (\( username, maybeUrl ) dict ->
+                                        let
+                                            val =
+                                                case maybeUrl of
+                                                    Just avatarUrl ->
+                                                        GithubImage avatarUrl
 
-                                        val =
-                                            case Dict.get hashedUsername data of
-                                                Just avatarUrl ->
-                                                    GithubImage avatarUrl
-
-                                                Nothing ->
-                                                    Failed
-                                    in
-                                        Dict.insert username val dict
-                                )
-                                model.githubImages
-                                requestedUsernames
+                                                    Nothing ->
+                                                        Failed
+                                        in
+                                            Dict.insert username val dict
+                                    )
+                                    model.githubImages
                     in
                         { model | githubImages = imgs } ! []
 
@@ -222,7 +218,7 @@ update msg model =
                                         model.githubImages
 
                                 imagesRequest =
-                                    Task.attempt (CbGithubImages usernamesToRequest) <|
+                                    Task.attempt CbGithubImages <|
                                         Api.fetchAvatars
                                             model.githubToken
                                             usernamesToRequest
