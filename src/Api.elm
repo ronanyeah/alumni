@@ -1,11 +1,11 @@
 module Api exposing (fetchAvatars, fetchCampuses)
 
+import GraphQL.Client.Http exposing (Error, customSendQuery, sendQuery)
+import GraphQL.Request.Builder exposing (Field, NonNull, ObjectType, SelectionSpec, ValueSpec, aliasAs, extract, field, keyValuePairs, list, map, nullable, object, queryDocument, request, string, with)
 import GraphQL.Request.Builder.Arg as Arg
-import GraphQL.Client.Http exposing (Error, sendQuery, customSendQuery)
-import GraphQL.Request.Builder exposing (Field, ValueSpec, NonNull, ObjectType, SelectionSpec, aliasAs, keyValuePairs, queryDocument, extract, field, list, map, nullable, object, request, string, with)
 import Helpers exposing (dateParse)
 import Http exposing (header)
-import Model exposing (CohortWithoutNum, CampusWithoutNum, Student)
+import Model exposing (CampusWithoutNum, CohortWithoutNum, Student)
 import Task exposing (Task)
 
 

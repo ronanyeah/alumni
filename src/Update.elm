@@ -1,11 +1,11 @@
 module Update exposing (update)
 
-import Api
 import Animation exposing (deg)
+import Api
 import Dict
 import Element
 import Helpers exposing (getCohortAnim, log, sortByStartDate)
-import Model exposing (Campus, CampusWithoutNum, Model, Msg(..), GithubImage(..), State(..))
+import Model exposing (Campus, CampusWithoutNum, GithubImage(..), Model, Msg(..), State(..))
 import Task
 import Time
 
@@ -28,7 +28,7 @@ addFacNumbers =
                                 }
                             )
             in
-                { campus | cohorts = numberedCohorts }
+            { campus | cohorts = numberedCohorts }
         )
 
 
@@ -76,11 +76,11 @@ update msg model =
                                                     Nothing ->
                                                         Failed
                                         in
-                                            Dict.insert username val dict
+                                        Dict.insert username val dict
                                     )
                                     model.githubImages
                     in
-                        { model | githubImages = imgs } ! []
+                    { model | githubImages = imgs } ! []
 
                 Err err ->
                     model ! [ log "err" err ]
@@ -103,39 +103,39 @@ update msg model =
                                 ( frontInit, backInit ) =
                                     getCohortAnim cohort model.cohortAnims
                             in
-                                ( Animation.interrupt
-                                    [ Animation.toWith
-                                        (Animation.easing
-                                            { duration = 0.2 * Time.second
-                                            , ease = identity
-                                            }
-                                        )
-                                        [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
-                                        , Animation.opacity 1
-                                        ]
+                            ( Animation.interrupt
+                                [ Animation.toWith
+                                    (Animation.easing
+                                        { duration = 0.2 * Time.second
+                                        , ease = identity
+                                        }
+                                    )
+                                    [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
+                                    , Animation.opacity 1
                                     ]
-                                    frontInit
-                                , Animation.interrupt
-                                    [ Animation.toWith
-                                        (Animation.easing
-                                            { duration = 0.2 * Time.second
-                                            , ease = identity
-                                            }
-                                        )
-                                        [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
-                                        , Animation.opacity 0
-                                        ]
+                                ]
+                                frontInit
+                            , Animation.interrupt
+                                [ Animation.toWith
+                                    (Animation.easing
+                                        { duration = 0.2 * Time.second
+                                        , ease = identity
+                                        }
+                                    )
+                                    [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
+                                    , Animation.opacity 0
                                     ]
-                                    backInit
-                                )
+                                ]
+                                backInit
+                            )
                     in
-                        { model
-                            | state = CampusSelected campus
-                            , cohortAnims =
-                                model.cohortAnims
-                                    |> Dict.insert cohort.id ( frontAnim, backAnim )
-                        }
-                            ! []
+                    { model
+                        | state = CampusSelected campus
+                        , cohortAnims =
+                            model.cohortAnims
+                                |> Dict.insert cohort.id ( frontAnim, backAnim )
+                    }
+                        ! []
 
                 _ ->
                     model ! []
@@ -149,31 +149,31 @@ update msg model =
                                 ( frontInit, backInit ) =
                                     getCohortAnim cohort model.cohortAnims
                             in
-                                ( Animation.interrupt
-                                    [ Animation.toWith
-                                        (Animation.easing
-                                            { duration = 0.2 * Time.second
-                                            , ease = identity
-                                            }
-                                        )
-                                        [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
-                                        , Animation.opacity 0
-                                        ]
+                            ( Animation.interrupt
+                                [ Animation.toWith
+                                    (Animation.easing
+                                        { duration = 0.2 * Time.second
+                                        , ease = identity
+                                        }
+                                    )
+                                    [ Animation.rotate3d (deg 0) (deg 180) (deg 0)
+                                    , Animation.opacity 0
                                     ]
-                                    frontInit
-                                , Animation.interrupt
-                                    [ Animation.toWith
-                                        (Animation.easing
-                                            { duration = 0.2 * Time.second
-                                            , ease = identity
-                                            }
-                                        )
-                                        [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
-                                        , Animation.opacity 1
-                                        ]
+                                ]
+                                frontInit
+                            , Animation.interrupt
+                                [ Animation.toWith
+                                    (Animation.easing
+                                        { duration = 0.2 * Time.second
+                                        , ease = identity
+                                        }
+                                    )
+                                    [ Animation.rotate3d (deg 0) (deg 0) (deg 0)
+                                    , Animation.opacity 1
                                     ]
-                                    backInit
-                                )
+                                ]
+                                backInit
+                            )
 
                         githubUsernames =
                             cohort.students
@@ -205,28 +205,28 @@ update msg model =
                                         |> Dict.insert cohort.id ( frontAnim, backAnim )
                             }
                     in
-                        if List.length usernamesToRequest == 0 then
-                            modelWithAnimations ! []
-                        else
-                            let
-                                updatedImageDict =
-                                    Dict.union
-                                        (usernamesToRequest
-                                            |> List.map (flip (,) Loading)
-                                            |> Dict.fromList
-                                        )
-                                        model.githubImages
+                    if List.length usernamesToRequest == 0 then
+                        modelWithAnimations ! []
+                    else
+                        let
+                            updatedImageDict =
+                                Dict.union
+                                    (usernamesToRequest
+                                        |> List.map (flip (,) Loading)
+                                        |> Dict.fromList
+                                    )
+                                    model.githubImages
 
-                                imagesRequest =
-                                    Task.attempt CbGithubImages <|
-                                        Api.fetchAvatars
-                                            model.githubToken
-                                            usernamesToRequest
-                            in
-                                { modelWithAnimations
-                                    | githubImages = updatedImageDict
-                                }
-                                    ! [ imagesRequest ]
+                            imagesRequest =
+                                Task.attempt CbGithubImages <|
+                                    Api.fetchAvatars
+                                        model.githubToken
+                                        usernamesToRequest
+                        in
+                        { modelWithAnimations
+                            | githubImages = updatedImageDict
+                        }
+                            ! [ imagesRequest ]
 
                 _ ->
                     model ! []

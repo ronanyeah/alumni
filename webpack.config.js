@@ -1,42 +1,48 @@
-const webpack = require('webpack')
-const { resolve } = require('path')
+const copyWebpackPlugin = require("copy-webpack-plugin");
+const { resolve } = require("path");
+const webpack = require("webpack");
 
-const PROD = process.env.NODE_ENV === 'production'
+const { GITHUB_TOKEN, GRAPHQL_ENDPOINT, DEBUG, NODE_ENV } = process.env;
 
-if (!PROD) {
-  require('dotenv').config()
-}
+if (!GRAPHQL_ENDPOINT) throw Error("Missing GraphQL endpoint!");
+
+const publicFolder = resolve("./public");
 
 module.exports = {
-  entry: resolve(__dirname, 'client/index.js'),
+  entry: "./src/index.js",
   output: {
-    path: resolve('./public'),
-    filename: 'bundle.js'
+    path: publicFolder,
+    filename: "bundle.js"
   },
   devServer: {
-    contentBase: './public'
+    contentBase: publicFolder
+  },
+  module: {
+    rules: [
+      {
+        test: /\.elm$/,
+        exclude: [/elm-stuff/, /node_modules/],
+        use: [
+          { loader: "elm-hot-loader" },
+          {
+            loader: "elm-webpack-loader",
+            options: {
+              cwd: __dirname,
+              debug: DEBUG === "true",
+              warn: NODE_ENV === "development"
+            }
+          }
+        ]
+      }
+    ]
   },
   plugins: [
     new webpack.DefinePlugin({
-      GRAPHQL_ENDPOINT: JSON.stringify(process.env.GRAPHQL_ENDPOINT || 'http://localhost:4000/graph'),
-      GITHUB_TOKEN: JSON.stringify(process.env.GITHUB_TOKEN || '')
+      GRAPHQL_ENDPOINT: `"${GRAPHQL_ENDPOINT}"`,
+      GITHUB_TOKEN: `"${GITHUB_TOKEN}"`
     }),
-    ...PROD
-      ? [ new webpack.optimize.UglifyJsPlugin() ]
-      : []
-  ],
-  module: {
-    rules: [{
-      test: /\.elm$/,
-      exclude: [/elm-stuff/, /node_modules/, /serve/],
-      use: {
-        loader: 'elm-webpack-loader',
-        options: {
-          cwd: __dirname,
-          debug: !PROD,
-          warn: !PROD
-        }
-      }
-    }]
-  }
-}
+    new webpack.NamedModulesPlugin(),
+    new webpack.NoEmitOnErrorsPlugin(),
+    new copyWebpackPlugin(["static"])
+  ]
+};

@@ -1,11 +1,11 @@
 module Helpers exposing (..)
 
 import Animation
-import Element
-import Element.Attributes
 import Date exposing (Date)
 import Dict exposing (Dict)
-import Fixtures exposing (frontInit, backInit)
+import Element
+import Element.Attributes
+import Fixtures exposing (backInit, frontInit)
 import Model exposing (Cohort, CohortAnim, GithubImage(..), Msg(..))
 
 
@@ -15,7 +15,7 @@ log l v =
         _ =
             Debug.log l v
     in
-        Cmd.none
+    Cmd.none
 
 
 dateParse : String -> Date.Date
@@ -35,7 +35,7 @@ cohortText start end =
         render date =
             (date |> Date.month |> toString) ++ " " ++ (date |> Date.year |> toString)
     in
-        render start ++ " / " ++ render end
+    render start ++ " / " ++ render end
 
 
 getCohortAnim : Cohort -> Dict String CohortAnim -> CohortAnim

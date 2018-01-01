@@ -1,11 +1,11 @@
-module Styling exposing (styling, Styles(..), Variations(..))
+module Styling exposing (Styles(..), Variations(..), styling)
 
-import Style exposing (StyleSheet, style, stylesheet, variation)
-import Style.Font as Font
-import Style.Color exposing (background, text)
-import Style.Border as Border
-import Style.Shadow as Shadow
 import Color exposing (rgb)
+import Style exposing (StyleSheet, style, styleSheet, variation)
+import Style.Border as Border
+import Style.Color exposing (background, text)
+import Style.Font as Font
+import Style.Shadow as Shadow
 
 
 type Styles
@@ -24,7 +24,7 @@ type Variations
 
 facFont : Style.Property class variation
 facFont =
-    Font.typeface [ "UG" ]
+    Font.typeface [ Font.font "UG" ]
 
 
 grey : Color.Color
@@ -39,7 +39,7 @@ darkGrey =
 
 styling : StyleSheet Styles Variations
 styling =
-    stylesheet
+    styleSheet
         [ style CampusCircle
             [ facFont
             , background grey
@@ -58,5 +58,5 @@ styling =
         , style CohortNum [ Font.size 80, variation Mobile [ Font.size 50 ] ]
         , style None []
         , style StudentImg [ Border.rounded 25, Shadow.simple ]
-        , style Text [ Font.typeface [ "UGmed" ], text Color.black ]
+        , style Text [ Font.typeface [ Font.font "UGmed" ], text Color.black ]
         ]

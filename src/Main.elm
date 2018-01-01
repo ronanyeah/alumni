@@ -5,8 +5,8 @@ import Api
 import Dict
 import Fixtures
 import Html
-import Task
 import Model exposing (Model, Msg(..))
+import Task
 import Update exposing (update)
 import View exposing (view)
 import Window
@@ -28,10 +28,10 @@ init ( url, githubToken ) =
         model =
             Fixtures.emptyModel
     in
-        { model | githubToken = githubToken }
-            ! [ Task.attempt CbCampuses (Api.fetchCampuses url)
-              , Task.perform Resize Window.size
-              ]
+    { model | githubToken = githubToken }
+        ! [ Task.attempt CbCampuses (Api.fetchCampuses url)
+          , Task.perform Resize Window.size
+          ]
 
 
 subscriptions : Model -> Sub Msg
@@ -41,7 +41,7 @@ subscriptions model =
             Dict.values model.cohortAnims
                 |> List.foldl (\( a, b ) acc -> acc ++ [ a, b ]) []
     in
-        Sub.batch
-            [ Animation.subscription Animate cohortAnimations
-            , Window.resizes Resize
-            ]
+    Sub.batch
+        [ Animation.subscription Animate cohortAnimations
+        , Window.resizes Resize
+        ]
