@@ -51,30 +51,30 @@ header { phone } =
     let
         logo =
             newTab "https://foundersandcoders.com/" <|
-                el None [ paddingXY 0 15, center, verticalCenter ] <|
-                    image None [ height <| px 50 ] { src = "/logo.png", caption = "FAC Logo" }
+                image None [ height <| px 50 ] { src = "/logo.png", caption = "FAC Logo" }
     in
     if phone then
-        logo
+        el None [ center, padding 20 ] <| logo
     else
-        logo
-            |> Element.onRight
-                [ el Text
-                    [ paddingLeft 15
-                    , verticalCenter
+        el None [ center, padding 20 ] <|
+            (logo
+                |> Element.onRight
+                    [ el Text
+                        [ paddingLeft 15
+                        , verticalCenter
+                        ]
+                      <|
+                        text "Alumni"
                     ]
-                  <|
-                    text "Alumni"
-                ]
-            |> Element.onLeft
-                [ el Text
-                    [ paddingRight 15
-                    , verticalCenter
-                    , width <| px 160
+                |> Element.onLeft
+                    [ el Text
+                        [ paddingRight 15
+                        , verticalCenter
+                        ]
+                      <|
+                        text "Founders & Coders"
                     ]
-                  <|
-                    text "Founders & Coders"
-                ]
+            )
 
 
 viewCampuses : Device -> List Campus -> Element Styles Variations Msg
