@@ -20,3 +20,5 @@ bundle.js
 node_modules
 
 elm-analyse.json
+
+.graphcoolrc

@@ -1,0 +1,43 @@
+type File @model {
+  contentType: String!
+  createdAt: DateTime!
+  id: ID! @isUnique
+  name: String!
+  secret: String! @isUnique
+  size: Int!
+  updatedAt: DateTime!
+  url: String! @isUnique
+}
+
+type User @model {
+  createdAt: DateTime!
+  id: ID! @isUnique
+  updatedAt: DateTime!
+}
+
+type Student @model {
+  id: ID! @isUnique
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  firstName: String!
+  github: String
+  cohort: Cohort! @relation(name: "StudentOnCohort")
+}
+
+type Cohort @model {
+  id: ID! @isUnique
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  startDate: DateTime!
+  endDate: DateTime!
+  campus: Campus! @relation(name: "CohortOnCampus")
+  students: [Student!]! @relation(name: "StudentOnCohort")
+}
+
+type Campus @model {
+  id: ID! @isUnique
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  cohorts: [Cohort!]! @relation(name: "CohortOnCampus")
+}

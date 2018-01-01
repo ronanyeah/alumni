@@ -1,0 +1,9 @@
+types: ./types.graphql
+functions: {}
+permissions:
+- operation: Campus.read
+- operation: Cohort.read
+- operation: Student.read
+rootTokens:
+- token
+- ok
