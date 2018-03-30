@@ -3,10 +3,15 @@ module Helpers exposing (..)
 import Animation
 import Date exposing (Date)
 import Dict exposing (Dict)
-import Element
-import Element.Attributes
+import Element exposing (Element, empty, htmlAttribute)
 import Fixtures exposing (backInit, frontInit)
 import Model exposing (Cohort, CohortAnim, GithubImage(..), Msg(..))
+
+
+whenJust : (a -> Element msg) -> Maybe a -> Element msg
+whenJust fn =
+    Maybe.map fn
+        >> Maybe.withDefault empty
 
 
 log : String -> a -> Cmd msg
@@ -44,9 +49,9 @@ getCohortAnim { id } =
         >> Maybe.withDefault ( frontInit, backInit )
 
 
-renderAnim : Animation.State -> List (Element.Attribute variation Msg) -> List (Element.Attribute variation Msg)
+renderAnim : Animation.State -> List (Element.Attribute Msg) -> List (Element.Attribute Msg)
 renderAnim animStyle otherAttrs =
     animStyle
         |> Animation.render
-        |> List.map Element.Attributes.toAttr
+        |> List.map htmlAttribute
         |> (++) otherAttrs

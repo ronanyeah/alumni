@@ -1,14 +1,46 @@
 module View exposing (view)
 
+import Color exposing (Color, rgb)
 import Dict exposing (Dict)
-import Element exposing (Device, Element, circle, column, el, empty, image, newTab, row, text, viewport, whenJust)
-import Element.Attributes exposing (center, height, padding, paddingBottom, paddingLeft, paddingRight, paddingTop, paddingXY, percent, px, spacing, vary, verticalCenter, width)
+import Element exposing (Attribute, Device, Element, centerX, centerY, column, el, empty, fill, height, image, layout, newTabLink, padding, px, row, spacing, text, width)
+import Element.Background as Background
+import Element.Border as Border
 import Element.Events exposing (onClick)
-import Helpers exposing (cohortText, getCohortAnim, renderAnim)
+import Element.Font as Font
+import Helpers exposing (cohortText, getCohortAnim, renderAnim, whenJust)
 import Html exposing (Html)
 import List.Extra exposing (greedyGroupsOf)
 import Model exposing (Campus, Cohort, CohortAnim, GithubImage(..), Model, Msg(..), State(..), Student)
-import Styling exposing (Styles(..), Variations(..), styling)
+
+
+font : Attribute msg
+font =
+    Font.family
+        [ Font.external
+            { name = "UG"
+            , url = "/fonts.css"
+            }
+        ]
+
+
+mediumFont : Attribute msg
+mediumFont =
+    Font.family
+        [ Font.external
+            { name = "UGmed"
+            , url = "/fonts.css"
+            }
+        ]
+
+
+grey : Color
+grey =
+    rgb 235 235 235
+
+
+darkGrey : Color
+darkGrey =
+    rgb 113 123 127
 
 
 view : Model -> Html Msg
@@ -30,77 +62,92 @@ view { campuses, state, cohortAnims, githubImages, device } =
                             getCohortAnim cohort cohortAnims
                     in
                     [ viewCampus device campus DeselectCampus
-                    , el None [ padding 5 ] <| viewCohort device anim cohort DeselectCohort
+                    , el [ padding 5, centerX ] <| viewCohort device anim cohort DeselectCohort
                     , viewStudents device githubImages cohort.students
                     ]
     in
-    viewport styling <|
-        column None
+    layout [] <|
+        column
             []
             [ header device
-            , column None
-                [ center
-                , verticalCenter
+            , column
+                [ centerX
+                , centerY
                 ]
                 body
             ]
 
 
-header : Device -> Element Styles variation Msg
+header : Device -> Element Msg
 header { phone } =
     let
-        logo =
-            newTab "https://foundersandcoders.com/" <|
-                image None [ height <| px 50 ] { src = "/logo.png", caption = "FAC Logo" }
-    in
-    if phone then
-        el None [ center, padding 20 ] <| logo
-    else
-        el None [ center, padding 20 ] <|
-            (logo
-                |> Element.onRight
-                    [ el Text
-                        [ paddingLeft 15
-                        , verticalCenter
+        txts =
+            if phone then
+                []
+            else
+                [ Element.onRight <|
+                    el
+                        [ padding 15
+                        , centerY
+                        , mediumFont
+                        , Font.color Color.black
                         ]
-                      <|
+                    <|
                         text "Alumni"
-                    ]
-                |> Element.onLeft
-                    [ el Text
-                        [ paddingRight 15
-                        , verticalCenter
+                , Element.onLeft <|
+                    el
+                        [ padding 15
+                        , centerY
+                        , mediumFont
+                        , Font.color Color.black
                         ]
-                      <|
+                    <|
                         text "Founders & Coders"
-                    ]
-            )
+                ]
+    in
+    newTabLink ([ centerX, padding 20 ] ++ txts)
+        { url = "https://foundersandcoders.com/"
+        , label =
+            image [ height <| px 50 ]
+                { src = "/logo.png"
+                , description = "FAC Logo"
+                }
+        }
 
 
-viewCampuses : Device -> List Campus -> Element Styles Variations Msg
+viewCampuses : Device -> List Campus -> Element Msg
 viewCampuses device =
     List.map
         (\campus ->
             viewCampus device campus (SelectCampus campus)
         )
-        >> column None
-            [ center, width <| percent 100, verticalCenter ]
+        >> column
+            [ centerX
+            , width fill
+            , centerY
+            ]
 
 
-viewCampus : Device -> Campus -> Msg -> Element Styles Variations Msg
+viewCampus : Device -> Campus -> Msg -> Element Msg
 viewCampus device campus clickMsg =
-    el CampusText
-        [ center
-        , verticalCenter
+    el
+        [ centerX
+        , centerY
         , onClick clickMsg
-        , vary Mobile device.phone
+        , if device.phone then
+            Font.size 30
+          else
+            Font.size 80
+        , font
+        , Element.pointer
+        , Font.color darkGrey
         ]
     <|
         text <|
             String.toUpper campus.name
 
 
-viewCohorts : Device -> Dict String CohortAnim -> List Cohort -> Element Styles Variations Msg
+viewCohorts : Device -> Dict String CohortAnim -> List Cohort -> Element Msg
 viewCohorts device cohortAnims cohorts =
     let
         cohortsWithAnimations : List ( CohortAnim, Cohort )
@@ -122,12 +169,12 @@ viewCohorts device cohortAnims cohorts =
                         viewCohort device anim cohort (SelectCohort cohort)
                     )
                 |> greedyGroupsOf 3
-                |> List.map (row None [ spacing 5, padding 5 ])
+                |> List.map (row [ spacing 5, padding 5 ])
     in
-    column None [ center, paddingBottom 15 ] content
+    column [ centerX, padding 15 ] content
 
 
-viewCohort : Device -> CohortAnim -> Cohort -> Msg -> Element Styles Variations Msg
+viewCohort : Device -> CohortAnim -> Cohort -> Msg -> Element Msg
 viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
     let
         size =
@@ -135,67 +182,98 @@ viewCohort device ( frontAnim, backAnim ) cohort clickMsg =
                 device.width
                     |> toFloat
                     |> (*) 0.3
+                    |> round
             else
                 200
 
+        attrs =
+            [ font
+            , Background.color grey
+            , Element.pointer
+            , Border.rounded <| size // 2
+            , width <| px size
+            , height <| px size
+            , Border.shadow
+                { offset = ( 0, 0 )
+                , blur = 10
+                , size = 3
+                , color = Color.grey
+                }
+            , centerX
+            , centerY
+            ]
+
         front =
-            circle (size / 2)
-                CampusCircle
-                (renderAnim frontAnim [ center, verticalCenter ])
+            el
+                (renderAnim frontAnim attrs)
             <|
-                el CohortNum [ vary Mobile device.phone, center, verticalCenter ] <|
+                el
+                    [ if device.phone then
+                        Font.size 50
+                      else
+                        Font.size 80
+                    , centerX
+                    , centerY
+                    ]
+                <|
                     text <|
                         toString cohort.num
 
         back =
-            circle (size / 2)
-                CampusCircle
-                (renderAnim backAnim [ center, verticalCenter ])
+            el
+                (renderAnim backAnim attrs)
             <|
-                el CohortDates [ vary Mobile device.phone, center, verticalCenter ] <|
+                el
+                    [ if device.phone then
+                        Font.size 15
+                      else
+                        Font.size 20
+                    , centerX
+                    , centerY
+                    ]
+                <|
                     text <|
                         cohortText cohort.startDate cohort.endDate
     in
-    el None
+    el
         [ onClick clickMsg
         , height <| px size
         , width <| px size
-        , center
+        , centerX
         , padding 5
+        , Element.inFront front
+        , Element.behind back
         ]
         empty
-        |> Element.within
-            [ front
-            , back
-            ]
 
 
-viewStudents : Device -> Dict String GithubImage -> List Student -> Element Styles Variations Msg
+viewStudents : Device -> Dict String GithubImage -> List Student -> Element Msg
 viewStudents device githubImages students =
-    column None
-        [ center, paddingTop 20 ]
-        (students
-            |> List.map
-                (\student ->
-                    let
-                        githubImage =
-                            student.github
-                                |> Maybe.andThen (flip Dict.get githubImages)
-                                |> Maybe.withDefault Failed
-                    in
-                    viewStudent device githubImage student
-                )
-            |> greedyGroupsOf
-                (if device.phone then
-                    3
-                 else
-                    4
-                )
-            |> List.map (row None [])
-        )
+    el [ centerX ] <|
+        column
+            [ padding 20, spacing 20 ]
+            (students
+                |> List.map
+                    (\student ->
+                        let
+                            githubImage =
+                                student.github
+                                    |> Maybe.andThen (flip Dict.get githubImages)
+                                    |> Maybe.withDefault Failed
+                        in
+                        viewStudent device githubImage student
+                    )
+                |> greedyGroupsOf
+                    (if device.phone then
+                        3
+                     else
+                        4
+                    )
+                |> List.map (row [ spacing 10 ] >> el [ centerX ])
+            )
 
 
-viewStudent : Device -> GithubImage -> Student -> Element Styles Variations Msg
+viewStudent : Device -> GithubImage -> Student -> Element Msg
 viewStudent device githubImage { firstName, github } =
     let
         imgSrc =
@@ -213,24 +291,44 @@ viewStudent device githubImage { firstName, github } =
             if device.phone then
                 device.width
                     |> flip (//) 4
-                    |> toFloat
                     |> px
                     |> width
             else
                 width <| px 90
     in
-    column None
-        [ center, colWidth, paddingBottom 10 ]
+    column
+        [ centerY, colWidth, centerX, spacing 10 ]
         [ image
-            StudentImg
             [ width <| px 50
             , height <| px 50
+            , Border.rounded 25
+            , centerX
+            , Border.shadow
+                { offset = ( 0, 0 )
+                , blur = 10
+                , size = 3
+                , color = Color.grey
+                }
             ]
-            { src = imgSrc, caption = "Student Image" }
-        , el Text [ padding 10 ] <| text firstName
-        , whenJust github
-            (\username ->
-                newTab ("https://github.com/" ++ username) <|
-                    image None [] { src = "/gh.svg", caption = "Github Link" }
-            )
+            { src = imgSrc, description = "Student Image" }
+        , el
+            [ mediumFont
+            , Font.color Color.black
+            , padding 10
+            , centerX
+            ]
+          <|
+            text firstName
+        , github
+            |> whenJust
+                (\username ->
+                    newTabLink [ centerX ]
+                        { url = "https://github.com/" ++ username
+                        , label =
+                            image []
+                                { src = "/gh.svg"
+                                , description = "Github Link"
+                                }
+                        }
+                )
         ]
